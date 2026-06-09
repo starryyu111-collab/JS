@@ -24,23 +24,9 @@ INT4-MSE-Selected & 4 & 4 & 92.8600 & 1.2700 & 0.00034846 / 0.41728575 \\
 
 The INT4-MinMax baseline suffers a clear accuracy degradation, dropping from 94.13\% to 88.20\%. This behavior is consistent with the expected sensitivity of low-bit activation quantization to large calibration-time activation values. When MinMax calibration assigns the full 4-bit activation range according to the maximum observed activation, rare large values can enlarge the quantization interval for the majority of post-ReLU activations.
 
-Both clipping-based INT4 methods alleviate the accuracy degradation relative to INT4-MinMax. INT4-P99.9 improves Top-1 accuracy from 88.20\% to 92.97\%, while INT4-MSE-Selected improves it to 92.86\%. Therefore, the proposed method can be described as reducing the degradation of INT4 PTQ compared with MinMax calibration. However, in this run, INT4-MSE-Selected does not achieve the highest Top-1 accuracy among the INT4 methods: INT4-P99.9 is higher by 0.11 percentage points. For this reason, the discussion should emphasize reconstruction-error reduction and layer sensitivity rather than claiming that the proposed method is the best-accuracy INT4 method.
+Both clipping-based INT4 methods alleviate the accuracy degradation relative to INT4-MinMax. INT4-P99.9 improves Top-1 accuracy from 88.20\% to 92.97\%, while INT4-MSE-Selected improves it to 92.86\%. Therefore, the proposed method can be described as reducing the degradation of INT4 PTQ compared with MinMax calibration. However, in this run, INT4-MSE-Selected does not achieve the highest Top-1 accuracy among the INT4 methods: INT4-P99.9 is higher by 0.11 percentage points. For this reason, the discussion should emphasize reconstruction-error reduction and layer-dependent calibration behavior rather than claiming that the proposed method is the best-accuracy INT4 method.
 
-\subsection{Activation Histogram and Outlier Interpretation}
-An activation histogram is useful for interpreting why MinMax calibration can be fragile in INT4 PTQ. For post-ReLU activations, the distribution is non-negative and may contain a small number of large values in the tail. In such a case, MinMax calibration preserves the largest observed value but assigns only 16 quantization levels to the entire interval from zero to that maximum. Consequently, the dense region near zero may be quantized with a coarse step size. Percentile clipping intentionally saturates part of the high-activation tail so that the available INT4 levels can better cover the activation range where most samples lie. Figure~\ref{fig:activation_histogram} is included as a diagnostic visualization slot for this mechanism-level interpretation. If the corresponding artifact is unavailable, the placeholder indicates the missing file rather than introducing unsupported visual evidence.
-
-\begin{figure}[t]
-\centering
-\IfFileExists{../outputs/figures/activation_histogram.png}{%
-\includegraphics[width=\linewidth]{../outputs/figures/activation_histogram.png}%
-}{%
-\fbox{\parbox{0.92\linewidth}{\centering Activation histogram figure not found in the current artifact.}}%
-}
-\caption{Activation histogram diagnostic for post-ReLU activation range calibration. When available, this figure should visualize the activation distribution tail and the clipping threshold used for interpretation.}
-\label{fig:activation_histogram}
-\end{figure}
-
-The current result artifact records the main result table and the available figures for accuracy drop, error metrics, and layer-wise MSE. It does not provide an activation histogram file. Therefore, this paper does not claim a direct visual demonstration of activation outliers from the histogram. Instead, the histogram discussion is used only as a mechanism-level interpretation of clipping, and the quantitative support is drawn from the reconstruction-error metrics in Table~\ref{tab:main_results} and Fig.~\ref{fig:error_metrics}.
+The current result artifact records the main result table and the available figures for accuracy drop, error metrics, and layer-wise MSE. It does not provide an activation histogram file. Therefore, this paper does not claim a direct visual demonstration of activation outliers from a histogram. Instead, the outlier discussion is used only as a mechanism-level interpretation of clipping, and the quantitative support is drawn from the reconstruction-error metrics in Table~\ref{tab:main_results} and Fig.~\ref{fig:error_metrics}.
 
 \subsection{Activation and Logit Reconstruction Error}
 Figure~\ref{fig:error_metrics} compares the activation reconstruction MSE and logit MSE of the quantized methods. The largest errors occur under INT4-MinMax, whose activation MSE is 0.00273660 and logit MSE is 1.84912006. After activation clipping, both error metrics decrease substantially. INT4-MSE-Selected reduces activation MSE to 0.00034846 and logit MSE to 0.41728575 compared with INT4-MinMax. This supports the interpretation that selecting layer-wise activation clipping thresholds can reduce the reconstruction error introduced by simulated INT4 activation quantization.
@@ -59,7 +45,7 @@ Figure~\ref{fig:error_metrics} compares the activation reconstruction MSE and lo
 Compared with the fixed INT4-P99.9 baseline, INT4-MSE-Selected has slightly lower activation MSE and logit MSE in this run. Specifically, its activation MSE is 0.00034846 compared with 0.00035606 for INT4-P99.9, and its logit MSE is 0.41728575 compared with 0.46350010. However, this lower reconstruction error does not translate into the highest Top-1 accuracy, since INT4-P99.9 remains slightly better in accuracy. This suggests that lower activation or logit MSE is informative for diagnosing quantization behavior, but it is not a perfect substitute for classification accuracy.
 
 \subsection{Layer-wise Activation MSE}
-Figure~\ref{fig:layerwise_mse} reports the layer-wise activation reconstruction MSE under the MSE-selected clipping procedure. The purpose of this figure is not to introduce an additional ablation, but to show that quantization error is not uniform across activation sites. Some layers are more sensitive to the INT4 activation range than others, which motivates choosing clipping thresholds on a layer-by-layer basis rather than applying a single numerical threshold to all activations.
+Figure~\ref{fig:layerwise_mse} reports the layer-wise activation reconstruction MSE under the MSE-selected clipping procedure. The purpose of this figure is not to introduce an additional ablation, but to show that quantization reconstruction error is not uniform across activation sites. This non-uniformity supports choosing clipping thresholds on a layer-by-layer basis rather than applying a single numerical threshold to all activations.
 
 \begin{figure}[t]
 \centering
@@ -68,7 +54,7 @@ Figure~\ref{fig:layerwise_mse} reports the layer-wise activation reconstruction 
 }{%
 \fbox{\parbox{0.92\linewidth}{\centering \texttt{layerwise\_mse.png} not found in the current artifact.}}%
 }
-\caption{Layer-wise activation reconstruction MSE under MSE-selected clipping. The non-uniform error distribution indicates that different activation layers have different sensitivity to the clipping threshold.}
+\caption{Layer-wise activation reconstruction MSE under MSE-selected clipping. The non-uniform error distribution indicates that different activation layers have different reconstruction-error behavior under the selected clipping thresholds.}
 \label{fig:layerwise_mse}
 \end{figure}
 
