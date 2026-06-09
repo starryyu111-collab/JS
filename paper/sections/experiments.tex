@@ -1,0 +1,48 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Dataset}
+All experiments are conducted on CIFAR-10. The FP32 model training setup uses the CIFAR-10 training split with a held-out validation subset: 45,000 images are used for training and 5,000 images are used for validation. The CIFAR-10 test set contains 10,000 images and is used only for final evaluation. The calibration set used by all PTQ methods is sampled from the CIFAR-10 training set, not from the test set.
+
+For post-training quantization calibration, we use 1,024 training images with seed 42. With a batch size of 128, this corresponds to eight calibration batches. The same calibration protocol is used for INT8 MinMax, INT4 MinMax, fixed-percentile INT4 clipping, and the proposed INT4 MSE-selected clipping method.
+
+\subsection{Model}
+The evaluated network is \texttt{resnet18\_cifar}, a ResNet-18 variant configured for CIFAR-10 classification with 10 output classes. The FP32 checkpoint is first trained and then reused as the floating-point reference for all post-training quantization experiments. No quantization-aware training is applied in this work.
+
+\subsection{Calibration Protocol}
+The PTQ calibration stage estimates activation ranges from a fixed calibration subset of the CIFAR-10 training set. For MinMax calibration, activation ranges are determined directly from the observed calibration activations. For fixed-percentile clipping, the upper activation clipping threshold is computed from the selected percentile of the collected calibration activations. For the proposed MSE-selected method, activation tensors are collected during calibration and used to select one clipping threshold per post-ReLU activation module from a predefined percentile candidate set.
+
+The calibration protocol is used only to determine quantization parameters and clipping thresholds. Model weights are not updated during calibration, and the method therefore remains a simulated post-training quantization procedure rather than quantization-aware training.
+
+\subsection{Quantization Settings}
+The FP32 reference uses 32-bit weights and 32-bit activations without activation observers or clipping. INT8-MinMax uses signed 8-bit weights with integer range $[-127,127]$ and unsigned 8-bit activations with integer range $[0,255]$. The INT8 weights are quantized symmetrically with per-channel granularity, while activations are quantized using affine per-tensor MinMax calibration at convolution and linear outputs.
+
+For all INT4 variants, weights are represented with signed 4-bit integers in the range $[-7,7]$ using symmetric per-channel quantization. Activations are represented with unsigned 4-bit integers in the range $[0,15]$ using affine quantization. The activation quantization site is the post-ReLU activation, and the activation granularity is per tensor for each ReLU module. Since post-ReLU activations are non-negative, the activation clipping lower bound is fixed to zero.
+
+Three INT4 activation calibration strategies are compared. INT4-MinMax uses the maximum observed post-ReLU calibration activation as the upper clipping bound. INT4-P99.9 uses a fixed 99.9th percentile upper clipping threshold. INT4-MSE-Selected searches the predefined percentile set $\{99.0, 99.5, 99.9, 99.95, 100.0\}$ for each post-ReLU activation module and selects the candidate that gives the lowest activation reconstruction MSE on the calibration activations. This selection is performed only within the predefined candidate set and should not be interpreted as continuous-space global optimization.
+
+All quantized experiments use simulated PTQ, also referred to as fake quantization: tensors are quantized to the target integer range and dequantized back for evaluation in the software pipeline. The experiments do not include a real INT4 inference kernel or hardware deployment.
+
+\subsection{Baselines}
+We compare the following methods:
+\begin{itemize}
+    \item \textbf{FP32}: the floating-point reference model without quantization.
+    \item \textbf{INT8-MinMax}: an 8-bit MinMax PTQ baseline used as a sanity check for the simulated quantization pipeline.
+    \item \textbf{INT4-MinMax}: the main low-bit PTQ baseline using post-ReLU MinMax activation calibration.
+    \item \textbf{INT4-P99.9}: a fixed-percentile INT4 clipping baseline using the 99.9th percentile activation threshold.
+    \item \textbf{INT4-MSE-Selected}: the proposed layer-wise activation clipping method, where the percentile threshold is selected according to calibration-set reconstruction MSE.
+\end{itemize}
+
+\subsection{Evaluation Metrics}
+Classification accuracy is evaluated on the full CIFAR-10 test set. The primary metric is Top-1 accuracy. We also report the accuracy drop relative to the FP32 reference:
+\begin{equation}
+\Delta_{\mathrm{acc}} = \mathrm{Acc}_{\mathrm{FP32}} - \mathrm{Acc}_{\mathrm{method}},
+\end{equation}
+where the drop is measured in percentage points.
+
+In addition to classification accuracy, we report activation reconstruction MSE and logit MSE to characterize quantization error. Activation MSE measures the mean squared error between FP32 activations and their fake-quantized--dequantized counterparts. Logit MSE measures the mean squared error between the output logits of the FP32 reference model and the corresponding simulated quantized model. These error metrics are used only as diagnostic measures and are not substitutes for test-set classification accuracy.
+
+\subsection{Implementation Details}
+The experiments are implemented in PyTorch and use the project configuration files for the FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected settings. The recorded configuration uses seed 42, deterministic execution, automatic device selection, and a batch size of 128. The FP32 training configuration uses SGD with momentum 0.9, learning rate 0.1, weight decay $5\times10^{-4}$, and a MultiStepLR schedule with milestones at epochs 50 and 75. The PTQ experiments load the trained FP32 checkpoint and then apply the corresponding simulated quantization and calibration procedure.
+
+No real hardware latency, throughput, energy, or deployment measurement is reported. Therefore, the experimental evaluation focuses on simulated PTQ accuracy and quantization-error metrics rather than hardware performance.
