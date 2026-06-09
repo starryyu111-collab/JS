@@ -1,14 +1,21 @@
 # Paper Materials
 
-> Scope note: this file is a structured material sheet for drafting the course paper. It is not a complete paper draft.
+> Scope note: this file is a structured material sheet for drafting the course paper. It is **not** a complete paper draft.
 >
-> Source status checked during preparation:
-> - `README.md`: found and inspected.
-> - `Claude.md`: found and inspected.
-> - `configs/cifar10.yaml`: MISSING. The experiment orchestrator instead references method-specific config files: `configs/fp32_cifar10.yaml`, `configs/int8_minmax_cifar10.yaml`, `configs/int4_minmax_cifar10.yaml`, `configs/int4_p999_cifar10.yaml`, and `configs/int4_mse_selected_cifar10.yaml`.
-> - `src/run_all_experiments.py`: MISSING. The actual orchestrator is `src/experiments/run_all_experiments.py`.
-> - `src/quant/clipping_search.py`: found and inspected.
-> - `outputs/autodl_results.zip`: found and parsed for real experiment results.
+> Generation rule followed: only information that can be read from the current GitHub repository is used. Any requested result or artifact that could not be found is marked as **MISSING**.
+
+## Source status checked
+
+| Requested source | Status | Notes |
+|---|---|---|
+| `README.md` | FOUND | Project describes CIFAR-10 INT4 PTQ with layer-wise MSE-selected activation clipping. |
+| `Claude.md` | FOUND | Provides paper title, scope, required methods, workflow, and claim restrictions. |
+| `configs/cifar10.yaml` | MISSING | The exact requested config file was not found. Method-specific config files were found and used instead: `configs/fp32_cifar10.yaml`, `configs/int8_minmax_cifar10.yaml`, `configs/int4_minmax_cifar10.yaml`, `configs/int4_p999_cifar10.yaml`, and `configs/int4_mse_selected_cifar10.yaml`. |
+| `src/run_all_experiments.py` | MISSING | The exact requested path was not found. The actual experiment orchestrator found in the repository is `src/experiments/run_all_experiments.py`. |
+| `src/quant/clipping_search.py` | FOUND | Implements layer-wise MSE-selected post-ReLU activation clipping. |
+| `outputs/tables/` | MISSING | No committed table file was found at checked paths such as `outputs/tables/main_results.md` or `outputs/tables/main_results.csv`. |
+| `outputs/results/` | MISSING | Checked common result files referenced by the orchestrator/configs, including `main_results.md`, `main_results.csv`, and per-method CSVs; no committed result files were found. |
+| `outputs/figures/` | MISSING | Checked expected figure files `accuracy_drop.png`, `error_metrics.png`, and `layerwise_mse.png`; no committed figure files were found. |
 
 ## 1. Paper title
 
@@ -16,59 +23,60 @@
 
 ## 2. Research problem
 
-Low-bit post-training quantization can strongly amplify activation outliers in CNNs. In the INT4 setting, MinMax activation calibration may allocate too much quantization range to rare large activation values, increasing reconstruction error and causing classification accuracy degradation.
+Low-bit post-training quantization can be sensitive to activation outliers. In INT4 PTQ, MinMax calibration may allocate too much quantization range to rare large activation values, which can increase activation reconstruction error and degrade classification accuracy.
 
-This project studies whether activation clipping selected from calibration data can make INT4 PTQ more stable than ordinary INT4 MinMax PTQ on CIFAR-10.
+This project studies whether calibration-time activation clipping can make INT4 PTQ more stable than ordinary INT4 MinMax PTQ on a CIFAR-10 CNN classification task.
 
 ## 3. Method name
 
 **Layer-wise MSE-Selected Activation Clipping**
 
-Implementation name in the result table: **INT4-MSE-Selected**.
+Implementation/result-table method name: **INT4-MSE-Selected**.
 
-For each observed post-ReLU activation site, the method searches the candidate percentile set:
+Method definition from the inspected code:
 
-`{99.0, 99.5, 99.9, 99.95, 100.0}`
+1. Collect post-ReLU activations on the calibration set.
+2. For each observed activation layer/site, evaluate the candidate percentile set `{99.0, 99.5, 99.9, 99.95, 100.0}`.
+3. Convert each candidate percentile into a clipping threshold.
+4. Fake-quantize and dequantize the collected activation values under each threshold.
+5. Compute activation reconstruction MSE between the original FP32 activations and the dequantized activations.
+6. Select the candidate threshold with the lowest MSE for that layer.
 
-For each candidate percentile, it computes the clipping threshold, fake-quantizes/dequantizes the collected calibration activations, computes the reconstruction MSE against the original FP32 activations, and selects the threshold with the minimum activation reconstruction MSE for that layer.
-
-Important wording constraint: this is **MSE-selected within a predefined candidate percentile set**, not a globally optimal clipping method.
+Important wording constraint: the method is **MSE-selected within a predefined candidate percentile set**, not globally optimal clipping.
 
 ## 4. Dataset and model
 
 - Dataset: **CIFAR-10**
 - Model: **resnet18_cifar**
 - Number of classes: **10**
-- FP32 training split recorded in config/result metadata:
-  - Train size: **45,000**
-  - Validation size: **5,000**
-  - Test size: **10,000**
-- FP32 training setting:
+- FP32 training config:
   - Epochs: **100**
-  - Seed: **42**
   - Batch size: **128**
+  - Seed: **42**
   - Optimizer: **SGD**
   - Learning rate: **0.1**
+  - Momentum: **0.9**
   - Weight decay: **0.0005**
-  - Scheduler: **MultiStepLR**
-  - Device used in recorded full results: **cuda**
+  - Scheduler: **MultiStepLR**, milestones `[50, 75]`, gamma `0.1`
+- Validation size in FP32 config: **5000**
+- Full test size required by the orchestrator: **10000**
 
 ## 5. Calibration set and evaluation set
 
 ### Calibration set
 
-- Source: **CIFAR-10 training set** (`CIFAR10 train=True`)
-- Calibration size: **1024 samples**
-- Calibration seed: **42**
-- Calibration batches: **8**
-- Calibration index checksum: **827329294**
+- Source: **CIFAR-10 training set** according to the project workflow.
+- Calibration size in quantization configs: **1024 samples**.
+- Calibration seed: **42** in quantization experiment configs.
+- Calibration batch count from actual outputs: **MISSING**.
+- Calibration index list/checksum from actual outputs: **MISSING**.
 
 ### Evaluation set
 
-- Evaluation set: **full CIFAR-10 test set**
-- Test size: **10,000 samples**
-- Evaluated test size in all full results: **10,000 samples**
-- The main table must not use smoke-test results.
+- Evaluation target: **full CIFAR-10 test set**.
+- Required full test size in `src/experiments/run_all_experiments.py`: **10000 samples**.
+- The orchestrator rejects smoke results and requires `is_smoke=false`, `test_size=10000`, and `evaluated_test_size=10000` for full result rows.
+- Actual evaluated test size from committed output tables: **MISSING**.
 
 ## 6. Quantization settings
 
@@ -78,166 +86,170 @@ Important wording constraint: this is **MSE-selected within a predefined candida
 - Activation bits: **32**
 - Activation site type: **none**
 - Activation granularity: **none**
+- Result path expected by config/orchestrator: `outputs/results/fp32_result.csv`
+- Actual result file status: **MISSING**
 
 ### INT8-MinMax
 
 - Weight dtype: **int8**
 - Weight integer range: **[-127, 127]**
-- Weight granularity: **per-channel**
+- Weight granularity: **per_channel**
 - Weight symmetry: **symmetric**
+- Weight channel axis: **0**
 - Activation dtype: **uint8**
 - Activation integer range: **[0, 255]**
-- Activation site: **conv_linear_output**
 - Activation granularity: **per_tensor**
+- Activation symmetry: **affine**
+- Activation site: **conv_linear_output**
 - Activation clipping/calibration: **MinMax from calibration data**
-- Role: quantization sanity-check baseline.
+- Result path expected by config/orchestrator: `outputs/results/int8_minmax_result.csv`
+- Actual result file status: **MISSING**
 
 ### INT4-MinMax
 
 - Weight dtype: **int4**
 - Weight integer range: **[-7, 7]**
-- Weight granularity: **per-channel**
+- Weight granularity: **per_channel**
+- Weight symmetry: **symmetric**
+- Weight channel axis: **0**
+- Activation dtype: **uint4**
+- Activation integer range: **[0, 15]**
+- Activation granularity: **per_tensor_per_relu_module**
+- Activation symmetry: **affine**
+- Activation site: **post_relu**
+- Activation clip minimum: **0**
+- Activation clip maximum source: **calibration_max**
+- Result path expected by config/orchestrator: `outputs/results/int4_minmax_result.csv`
+- Actual result file status: **MISSING**
+
+### INT4-P99.9 fixed clipping
+
+- Weight dtype: **int4**
+- Weight integer range: **[-7, 7]**
+- Weight granularity: **per_channel**
 - Weight symmetry: **symmetric**
 - Activation dtype: **uint4**
 - Activation integer range: **[0, 15]**
-- Activation site: **post_relu**
 - Activation granularity: **per_tensor_per_relu_module**
-- Activation clip minimum: **0**
-- Activation clip maximum source: **calibration_max**
-- Role: main INT4 baseline.
-
-### INT4-P99.9
-
-- Same INT4 weight and activation integer ranges as INT4-MinMax.
+- Activation symmetry: **affine**
 - Activation site: **post_relu**
-- Activation granularity: **per_tensor_per_relu_module**
 - Activation clip minimum: **0**
 - Activation clip method: **fixed_percentile**
 - Activation percentile: **99.9**
 - Activation quantile: **0.999**
 - Activation clip maximum source: **calibration_percentile**
-- Role: fixed clipping baseline.
+- Result path expected by config/orchestrator: `outputs/results/int4_p999_result.csv`
+- Actual result file status: **MISSING**
 
 ### INT4-MSE-Selected
 
-- Same INT4 weight and activation integer ranges as INT4-MinMax.
-- Activation site: **post_relu**
+- Weight dtype: **int4**
+- Weight integer range: **[-7, 7]**
+- Weight granularity: **per_channel**
+- Weight symmetry: **symmetric**
+- Activation dtype: **uint4**
+- Activation integer range: **[0, 15]**
 - Activation granularity: **per_tensor_per_relu_module**
+- Activation symmetry: **affine**
+- Activation site: **post_relu**
 - Activation clip minimum: **0**
 - Activation clip method: **mse_selected**
 - Candidate percentiles: **99.0, 99.5, 99.9, 99.95, 100.0**
 - Activation clip maximum source: **calibration_mse_selected_percentile**
-- Role: proposed method.
+- Threshold result path expected by config: `outputs/results/mse_selected_thresholds.csv`
+- Main result path expected by config/orchestrator: `outputs/results/int4_mse_selected_result.csv`
+- Actual result file status: **MISSING**
 
 ## 7. Baselines
 
-1. **FP32**: floating-point reference upper bound.
-2. **INT8-MinMax**: sanity-check PTQ baseline; expected to be close to FP32.
+1. **FP32**: floating-point reference.
+2. **INT8-MinMax**: quantization sanity-check baseline.
 3. **INT4-MinMax**: main low-bit PTQ baseline.
-4. **INT4-P99.9**: fixed activation clipping baseline.
-5. **INT4-MSE-Selected**: proposed layer-wise MSE-selected activation clipping method.
+4. **INT4-P99.9 fixed clipping**: fixed percentile clipping baseline.
+
+The proposed method is **INT4-MSE-Selected** and should be compared against the baselines above.
 
 ## 8. Main result table
 
-The following table uses real results parsed from `outputs/autodl_results.zip`. Do not change these numbers unless new experiments are run and the result artifact is updated.
+No committed `outputs/tables/` or `outputs/results/` table/result CSV was found in the current repository. Therefore, the metric values below are marked as **MISSING**. Do not replace these fields with numbers unless they are copied from real experiment outputs.
 
-| Method | Weight bits | Activation bits | Activation site type | Activation granularity | Top-1 accuracy (%) | Accuracy drop vs FP32 (pp) | Activation MSE | Logit MSE |
-|---|---:|---:|---|---|---:|---:|---:|---:|
-| FP32 | 32 | 32 | none | none | 94.1300 | 0.0000 | 0.00000000 | 0.00000000 |
-| INT8-MinMax | 8 | 8 | conv_linear_output | per_tensor | 94.1100 | 0.0200 | 0.00005792 | 0.00910544 |
-| INT4-MinMax | 4 | 4 | post_relu | per_tensor_per_relu_module | 88.2000 | 5.9300 | 0.00273660 | 1.84912006 |
-| INT4-P99.9 | 4 | 4 | post_relu | per_tensor_per_relu_module | 92.9700 | 1.1600 | 0.00035606 | 0.46350010 |
-| INT4-MSE-Selected | 4 | 4 | post_relu | per_tensor_per_relu_module | 92.8600 | 1.2700 | 0.00034846 | 0.41728575 |
+| Method | Weight bits | Activation bits | Activation site type | Activation granularity | Top-1 accuracy (%) | Accuracy drop vs FP32 (pp) | Activation MSE | Logit MSE | Result source |
+|---|---:|---:|---|---|---:|---:|---:|---:|---|
+| FP32 | 32 | 32 | none | none | MISSING | MISSING | MISSING | MISSING | `outputs/results/fp32_result.csv` MISSING |
+| INT8-MinMax | 8 | 8 | conv_linear_output | per_tensor | MISSING | MISSING | MISSING | MISSING | `outputs/results/int8_minmax_result.csv` MISSING |
+| INT4-MinMax | 4 | 4 | post_relu | per_tensor_per_relu_module | MISSING | MISSING | MISSING | MISSING | `outputs/results/int4_minmax_result.csv` MISSING |
+| INT4-P99.9 | 4 | 4 | post_relu | per_tensor_per_relu_module | MISSING | MISSING | MISSING | MISSING | `outputs/results/int4_p999_result.csv` MISSING |
+| INT4-MSE-Selected | 4 | 4 | post_relu | per_tensor_per_relu_module | MISSING | MISSING | MISSING | MISSING | `outputs/results/int4_mse_selected_result.csv` MISSING |
 
 ## 9. Figure list and each figure's intended message
 
-1. **`outputs/figures/accuracy_drop.png`**
+1. **`outputs/figures/accuracy_drop.png`** — **MISSING**
    - Intended message: compare Top-1 accuracy and accuracy drop across FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected.
-   - Expected paper use: main visual summary showing that INT4 MinMax suffers a large accuracy drop, while activation clipping recovers much of the lost accuracy.
+   - Source in code: generated by `write_accuracy_drop_figure(...)` if real main rows exist.
 
-2. **`outputs/figures/error_metrics.png`**
+2. **`outputs/figures/error_metrics.png`** — **MISSING**
    - Intended message: compare activation reconstruction MSE and logit MSE across quantized methods.
-   - Expected paper use: explain why activation clipping helps: it sharply reduces activation and logit errors compared with INT4-MinMax.
+   - Source in code: generated by `write_error_metric_figure(...)` if real main rows exist.
 
-3. **`outputs/figures/layerwise_mse.png`**
-   - Intended message: show layer-wise activation reconstruction MSE behavior under the MSE-selected clipping search.
-   - Expected paper use: support the claim that clipping decisions are layer-dependent rather than one uniform threshold being optimal for every layer.
+3. **`outputs/figures/layerwise_mse.png`** — **MISSING**
+   - Intended message: show layer-wise activation reconstruction MSE behavior for MSE-selected clipping.
+   - Source in config: expected output path in `configs/int4_mse_selected_cifar10.yaml`.
 
-4. **Activation histogram figure**: **MISSING**
-   - Intended message if later added: visualize activation outliers and the effect of clipping thresholds.
-   - Current status: not found in the parsed result artifact or the inspected config paths.
+4. **Activation histogram figure** — **MISSING**
+   - Intended message if later added: visualize activation outliers and clipping thresholds.
+   - Current status: no committed histogram figure path was found from the inspected files.
 
 ## 10. Three main observations
 
-1. **INT8-MinMax is a valid sanity-check baseline.**  
-   INT8-MinMax achieves **94.1100%** Top-1 accuracy, only **0.0200 percentage points** below the FP32 baseline of **94.1300%**. This indicates that the evaluation and simulated quantization pipeline is not generally broken.
+1. **The experiment design is coherent, but the committed result artifacts are missing.**  
+   The repository defines a complete comparison among FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected. However, no committed output table/result CSV was found, so the paper cannot yet report numeric accuracy, accuracy drop, activation MSE, or logit MSE from the current repository.
 
-2. **Naive INT4-MinMax causes a large accuracy drop.**  
-   INT4-MinMax drops from **94.1300%** to **88.2000%**, with an accuracy drop of **5.9300 percentage points**. Its activation MSE (**0.00273660**) and logit MSE (**1.84912006**) are also much larger than the clipped INT4 variants.
+2. **The proposed method is implemented as a calibration-time layer-wise clipping search.**  
+   `src/quant/clipping_search.py` collects post-ReLU activation values, evaluates the candidate percentile set `{99.0, 99.5, 99.9, 99.95, 100.0}`, computes fake-quantization reconstruction MSE, and selects the lowest-MSE candidate for each activation site.
 
-3. **Activation clipping substantially improves INT4 PTQ, but the proposed method is not the top-accuracy method in this run.**  
-   INT4-P99.9 reaches **92.9700%**, while INT4-MSE-Selected reaches **92.8600%**. Therefore, the paper may claim that MSE-selected clipping reduces activation/logit error compared with INT4-MinMax and slightly improves MSE metrics compared with P99.9, but it must not claim the best Top-1 accuracy. Specifically, INT4-MSE-Selected has lower activation MSE (**0.00034846 vs 0.00035606**) and lower logit MSE (**0.41728575 vs 0.46350010**) than INT4-P99.9, but slightly lower Top-1 accuracy (**92.8600% vs 92.9700%**).
+3. **The claim boundary must be conservative until real outputs are committed.**  
+   The paper may describe the configured method, baselines, dataset, model, and validation rules. It must not claim that INT4-MSE-Selected improves accuracy or MSE unless real output rows are added under `outputs/tables/` or `outputs/results/`.
 
 ## 11. Limitations
 
-Because of the course-paper deadline, the following missing items will **not** be supplemented with new experiments. They should be explicitly framed as limitations rather than hidden or overclaimed.
-
-### 11.1 Experimental scope limitations
-
-- The experiments are limited to **one dataset**, CIFAR-10. Therefore, the paper cannot claim generalization to larger or more complex datasets such as CIFAR-100, ImageNet, detection, or segmentation tasks.
-- The main full experiment uses only **one model**, `resnet18_cifar`. Therefore, the paper cannot claim that the method is robust across different CNN architectures such as MobileNetV2, VGG, or compact custom CNNs.
-- The recorded full experiment uses only **one random seed**, seed **42**. Therefore, the paper should report the result as a single-run observation and should not claim statistical robustness across random seeds.
-- The calibration set is fixed to **1024 CIFAR-10 training samples**. No calibration-size sensitivity study is included, so the paper cannot claim that the method is insensitive to calibration set size.
-
-### 11.2 Method and comparison limitations
-
-- The proposed threshold is selected only from a predefined percentile candidate set `{99.0, 99.5, 99.9, 99.95, 100.0}`. Therefore, the method should be described as **MSE-selected within a small candidate set**, not as globally optimal clipping.
-- The main accuracy improvement claim is strongest against **INT4-MinMax**, not against **INT4-P99.9**. In the recorded result, INT4-P99.9 has slightly higher Top-1 accuracy than INT4-MSE-Selected, although INT4-MSE-Selected has slightly lower activation MSE and logit MSE.
-- No Quantization-Aware Training (QAT) comparison is included. Therefore, the paper should only position the method as a PTQ calibration-time method, not as a replacement for QAT.
-- INT8-MinMax and INT4 variants use different activation observation sites/granularities in the recorded setup. Therefore, INT8-MinMax should be treated as a sanity-check baseline rather than a strictly controlled ablation against the INT4 post-ReLU setup.
-
-### 11.3 Implementation and deployment limitations
-
-- The implementation uses simulated PTQ / fake quantization. It does **not** include a real INT4 inference kernel.
-- No real hardware deployment is included. Therefore, the paper cannot claim FPGA, RFSoC, TensorRT, ONNX Runtime, TVM, or other deployment results.
-- No latency, throughput, energy, memory-bandwidth, or real storage/compression measurements are reported. Any discussion of reduced bit-width should be presented only as a theoretical motivation, not as an experimentally measured deployment benefit.
-
-### 11.4 Missing visualization limitation
-
-- The result artifact contains `accuracy_drop.png`, `error_metrics.png`, and `layerwise_mse.png`, but no activation histogram figure was found. Therefore, the paper can discuss activation outlier suppression through the clipping mechanism and error metrics, but it should not claim to visually demonstrate activation outliers with a histogram.
-
-Suggested wording for the paper limitation paragraph:
-
-> This study has several limitations. First, the experiments are conducted only on CIFAR-10 with a single ResNet-18-CIFAR model and a single random seed. Therefore, the current results should be interpreted as a controlled course-project case study rather than evidence of broad generalization. Second, the calibration set size is fixed to 1024 samples, and no calibration-size sensitivity analysis is included. Third, the proposed clipping threshold is selected from a small predefined percentile candidate set, so the method is MSE-selected within this candidate set rather than globally optimal. Fourth, the experiments use simulated PTQ / fake quantization without a real INT4 inference kernel or hardware deployment, so latency, throughput, energy, and bandwidth improvements are not measured. Finally, although the available figures report accuracy drop, error metrics, and layer-wise MSE behavior, no activation histogram figure is included. Future work should evaluate more datasets, more architectures, multiple random seeds, different calibration sizes, and real deployment backends.
+- The exact requested file `configs/cifar10.yaml` is missing; only method-specific config files were found.
+- The exact requested file `src/run_all_experiments.py` is missing; the actual orchestrator is `src/experiments/run_all_experiments.py`.
+- No committed `outputs/tables/` files were found, so the main result table currently has no verified numeric results.
+- No committed `outputs/results/` per-method CSVs were found, even though the configs/orchestrator define expected paths.
+- No committed `outputs/figures/` files were found, so figure availability is currently **MISSING**.
+- The project scope is limited to CIFAR-10 and `resnet18_cifar` in the inspected configs.
+- The method is evaluated/configured as simulated PTQ / fake quantization, not a real INT4 inference kernel.
+- No real hardware deployment, latency, throughput, energy, or memory-bandwidth measurement is available from the inspected files.
+- No QAT comparison is included in the inspected project scope.
+- No multi-seed, multi-dataset, multi-architecture, or calibration-size sensitivity result was found.
+- The method selects from a small predefined percentile candidate set; it must not be described as globally optimal clipping.
 
 ## 12. Claims that are allowed
 
 The paper may claim:
 
-1. On **CIFAR-10 / resnet18_cifar**, naive **INT4-MinMax PTQ** causes a substantial accuracy drop compared with FP32.
-2. On this experiment, **activation clipping** strongly improves INT4 PTQ compared with INT4-MinMax.
-3. **INT4-P99.9** improves Top-1 accuracy from **88.2000%** to **92.9700%** compared with INT4-MinMax.
-4. **INT4-MSE-Selected** improves Top-1 accuracy from **88.2000%** to **92.8600%** compared with INT4-MinMax.
-5. **INT4-MSE-Selected** reduces activation reconstruction MSE from **0.00273660** to **0.00034846** compared with INT4-MinMax.
-6. **INT4-MSE-Selected** reduces logit MSE from **1.84912006** to **0.41728575** compared with INT4-MinMax.
-7. Compared with INT4-P99.9, **INT4-MSE-Selected** has slightly lower activation MSE and logit MSE in this run.
-8. The method is a simple calibration-time PTQ method and does not require retraining.
-9. The method is **MSE-selected within the candidate set** `{99.0, 99.5, 99.9, 99.95, 100.0}`.
-10. The results suggest that suppressing activation outliers can stabilize INT4 PTQ on this CIFAR-10 experiment.
+1. The project studies **INT4 post-training quantization** for a **CIFAR-10 / resnet18_cifar** classification setup.
+2. The configured proposed method is **Layer-wise MSE-Selected Activation Clipping**.
+3. The method selects each post-ReLU activation clipping threshold from `{99.0, 99.5, 99.9, 99.95, 100.0}` by minimizing calibration activation reconstruction MSE.
+4. The configured comparison groups are FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected.
+5. The quantization settings use per-channel symmetric signed weights and affine unsigned activations for the INT4 post-ReLU variants.
+6. The calibration size configured for quantized methods is **1024** CIFAR-10 training samples.
+7. The orchestrator requires full CIFAR-10 test evaluation with `test_size=10000` and `evaluated_test_size=10000` before accepting result rows.
+8. The current repository, as inspected here, is missing committed numeric output tables/results; therefore, numeric result claims must wait until real output files are present.
 
 ## 13. Claims that are forbidden
 
 The paper must not claim:
 
-1. That INT4-MSE-Selected achieves the best Top-1 accuracy among all INT4 methods in the recorded experiment.
-2. That INT4-MSE-Selected outperforms INT4-P99.9 in classification accuracy.
-3. That the method is globally optimal; it is only selected from a predefined candidate percentile set.
+1. Any specific Top-1 accuracy, accuracy drop, activation MSE, or logit MSE value while the corresponding output table/result CSV is **MISSING**.
+2. That INT4-MSE-Selected outperforms INT4-MinMax, INT4-P99.9, INT8-MinMax, or FP32 in accuracy unless supported by real output rows.
+3. That INT4-MSE-Selected achieves the best INT4 accuracy unless supported by real output rows.
 4. That the method reaches INT8-level accuracy.
 5. That the method is SOTA.
-6. That the method generalizes to ImageNet, detection, segmentation, transformers, MobileNetV2, or other models without additional experiments.
-7. That real INT4 hardware acceleration was implemented.
-8. That latency, throughput, energy, or memory-bandwidth improvements were measured.
-9. That the project includes a real INT4 kernel, TensorRT deployment, ONNX Runtime deployment, TVM deployment, or FPGA/RFSoC deployment.
-10. That compression or storage reduction is an experimentally measured deployment result. At most, bit-width reduction can be discussed as a theoretical estimate.
-11. That the method removes all activation outlier effects.
-12. That the method is robust across seeds, calibration sizes, or datasets; these are not tested here.
+6. That the method is globally optimal; it is only selected from a predefined candidate percentile set.
+7. That the results generalize to ImageNet, CIFAR-100, detection, segmentation, transformers, MobileNetV2, or other models without additional experiments.
+8. That the method is robust across random seeds, calibration sizes, datasets, or architectures without corresponding experiments.
+9. That a real INT4 inference kernel was implemented.
+10. That FPGA/RFSoC, TensorRT, ONNX Runtime, TVM, or other deployment results were measured.
+11. That latency, throughput, energy, memory-bandwidth, or real storage/compression improvements were experimentally measured.
+12. That activation outliers are fully removed rather than mitigated by clipping.
