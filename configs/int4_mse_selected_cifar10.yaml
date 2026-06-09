@@ -1,0 +1,47 @@
+dataset:
+  name: CIFAR-10
+  data_dir: data
+  calibration_size: 1024
+  num_workers: 2
+
+model:
+  name: resnet18_cifar
+  num_classes: 10
+
+experiment:
+  seed: 42
+  deterministic: true
+  device: auto
+  batch_size: 128
+
+quantization:
+  method: INT4-MSE-Selected
+  weight:
+    dtype: int4
+    qmin: -7
+    qmax: 7
+    granularity: per_channel
+    symmetry: symmetric
+    channel_axis: 0
+  activation:
+    dtype: uint4
+    qmin: 0
+    qmax: 15
+    granularity: per_tensor_per_relu_module
+    symmetry: affine
+    site: post_relu
+    clip_min: 0
+    clip_method: mse_selected
+    candidate_percentiles: [99.0, 99.5, 99.9, 99.95, 100.0]
+    clip_max_source: calibration_mse_selected_percentile
+
+paths:
+  checkpoint_path: checkpoints/fp32_best.pt
+  result_path: outputs/results/int4_mse_selected_result.csv
+  threshold_result_path: outputs/results/mse_selected_thresholds.csv
+  figure_path: outputs/figures/layerwise_mse.png
+  log_path: outputs/logs/int4_mse_selected_ptq.log
+
+smoke:
+  max_calibration_batches:
+  max_test_batches:

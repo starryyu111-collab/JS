@@ -1,0 +1,35 @@
+dataset:
+  name: CIFAR-10
+  data_dir: data
+  val_size: 5000
+  num_workers: 2
+
+model:
+  name: resnet18_cifar
+  num_classes: 10
+
+training:
+  seed: 42
+  deterministic: true
+  device: auto
+  epochs: 100
+  batch_size: 128
+  optimizer:
+    name: SGD
+    learning_rate: 0.1
+    momentum: 0.9
+    weight_decay: 0.0005
+  scheduler:
+    name: MultiStepLR
+    milestones: [50, 75]
+    gamma: 0.1
+
+paths:
+  checkpoint_path: checkpoints/fp32_best.pt
+  log_path: outputs/logs/fp32_cifar10.log
+  result_path: outputs/results/fp32_result.csv
+
+smoke:
+  max_train_batches:
+  max_val_batches:
+  max_test_batches:

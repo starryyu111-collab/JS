@@ -1,0 +1,7 @@
+# AutoDL image already provides PyTorch, torchvision, CUDA, and Python.
+# Install only the project-level packages below to avoid replacing CUDA wheels.
+numpy
+matplotlib
+pyyaml
+tqdm
+pytest

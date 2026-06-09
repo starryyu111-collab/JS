@@ -1,0 +1,46 @@
+dataset:
+  name: CIFAR-10
+  data_dir: data
+  calibration_size: 1024
+  num_workers: 2
+
+model:
+  name: resnet18_cifar
+  num_classes: 10
+
+experiment:
+  seed: 42
+  deterministic: true
+  device: auto
+  batch_size: 128
+
+quantization:
+  method: INT4-P99.9
+  weight:
+    dtype: int4
+    qmin: -7
+    qmax: 7
+    granularity: per_channel
+    symmetry: symmetric
+    channel_axis: 0
+  activation:
+    dtype: uint4
+    qmin: 0
+    qmax: 15
+    granularity: per_tensor_per_relu_module
+    symmetry: affine
+    site: post_relu
+    clip_min: 0
+    clip_method: fixed_percentile
+    percentile: 99.9
+    quantile: 0.999
+    clip_max_source: calibration_percentile
+
+paths:
+  checkpoint_path: checkpoints/fp32_best.pt
+  result_path: outputs/results/int4_p999_result.csv
+  log_path: outputs/logs/int4_p999_ptq.log
+
+smoke:
+  max_calibration_batches:
+  max_test_batches:

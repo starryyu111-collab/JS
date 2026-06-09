@@ -1,0 +1,43 @@
+dataset:
+  name: CIFAR-10
+  data_dir: data
+  calibration_size: 1024
+  num_workers: 2
+
+model:
+  name: resnet18_cifar
+  num_classes: 10
+
+experiment:
+  seed: 42
+  deterministic: true
+  device: auto
+  batch_size: 128
+
+quantization:
+  method: INT8-MinMax
+  weight:
+    dtype: int8
+    qmin: -127
+    qmax: 127
+    granularity: per_channel
+    symmetry: symmetric
+    channel_axis: 0
+  activation:
+    dtype: uint8
+    qmin: 0
+    qmax: 255
+    granularity: per_tensor
+    symmetry: affine
+    site: conv_linear_output
+    clip_method: minmax
+    clip_max_source: calibration_minmax
+
+paths:
+  checkpoint_path: checkpoints/fp32_best.pt
+  result_path: outputs/results/int8_minmax_result.csv
+  log_path: outputs/logs/int8_minmax_ptq.log
+
+smoke:
+  max_calibration_batches:
+  max_test_batches:
