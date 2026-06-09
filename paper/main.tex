@@ -1,0 +1,47 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+
+\graphicspath{{../outputs/figures/}{outputs/figures/}{figures/}}
+
+\title{Research on Low-Bit (INT4) Post-Training Quantization for Lightweight CNNs Based on Activation Outlier Suppression}
+
+\author{%
+\IEEEauthorblockN{Author Name}
+\IEEEauthorblockA{Department or School\\
+Institution\\
+Email: author@example.com}
+}
+
+\begin{document}
+
+\maketitle
+
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/results_discussion}
+\input{sections/conclusion}
+
+\IfFileExists{refs.bib}{%
+\bibliographystyle{IEEEtran}
+\bibliography{refs}
+}{%
+\IfFileExists{../refs.bib}{%
+\bibliographystyle{IEEEtran}
+\bibliography{../refs}
+}{%
+\section*{References}
+\noindent\textbf{TODO:} Add \texttt{refs.bib} and replace the citation TODOs in Related Work with real citation keys before final submission.
+}%
+}
+
+\end{document}
