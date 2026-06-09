@@ -180,16 +180,35 @@ The following table uses real results parsed from `outputs/autodl_results.zip`. 
 
 ## 11. Limitations
 
-- Only one dataset is evaluated: **CIFAR-10**.
-- Only one model is evaluated in the main full experiment: **resnet18_cifar**.
-- Only one recorded random seed is used: **42**.
-- Calibration uses a fixed subset of **1024** CIFAR-10 training samples; no calibration-size sensitivity study is included.
-- The implementation uses simulated PTQ / fake quantization, not a real INT4 inference kernel.
-- No real hardware latency, throughput, energy, or memory-bandwidth measurement is reported.
-- No QAT comparison is included.
-- INT8 and INT4 use different activation observation sites/granularities in the recorded setup, so INT8-MinMax should be treated as a sanity check rather than a strictly controlled ablation against the INT4 post-ReLU setup.
-- The proposed threshold is selected only from a small predefined percentile candidate set; it is not globally optimal.
-- The main accuracy improvement claim is strongest against INT4-MinMax, not against INT4-P99.9.
+Because of the course-paper deadline, the following missing items will **not** be supplemented with new experiments. They should be explicitly framed as limitations rather than hidden or overclaimed.
+
+### 11.1 Experimental scope limitations
+
+- The experiments are limited to **one dataset**, CIFAR-10. Therefore, the paper cannot claim generalization to larger or more complex datasets such as CIFAR-100, ImageNet, detection, or segmentation tasks.
+- The main full experiment uses only **one model**, `resnet18_cifar`. Therefore, the paper cannot claim that the method is robust across different CNN architectures such as MobileNetV2, VGG, or compact custom CNNs.
+- The recorded full experiment uses only **one random seed**, seed **42**. Therefore, the paper should report the result as a single-run observation and should not claim statistical robustness across random seeds.
+- The calibration set is fixed to **1024 CIFAR-10 training samples**. No calibration-size sensitivity study is included, so the paper cannot claim that the method is insensitive to calibration set size.
+
+### 11.2 Method and comparison limitations
+
+- The proposed threshold is selected only from a predefined percentile candidate set `{99.0, 99.5, 99.9, 99.95, 100.0}`. Therefore, the method should be described as **MSE-selected within a small candidate set**, not as globally optimal clipping.
+- The main accuracy improvement claim is strongest against **INT4-MinMax**, not against **INT4-P99.9**. In the recorded result, INT4-P99.9 has slightly higher Top-1 accuracy than INT4-MSE-Selected, although INT4-MSE-Selected has slightly lower activation MSE and logit MSE.
+- No Quantization-Aware Training (QAT) comparison is included. Therefore, the paper should only position the method as a PTQ calibration-time method, not as a replacement for QAT.
+- INT8-MinMax and INT4 variants use different activation observation sites/granularities in the recorded setup. Therefore, INT8-MinMax should be treated as a sanity-check baseline rather than a strictly controlled ablation against the INT4 post-ReLU setup.
+
+### 11.3 Implementation and deployment limitations
+
+- The implementation uses simulated PTQ / fake quantization. It does **not** include a real INT4 inference kernel.
+- No real hardware deployment is included. Therefore, the paper cannot claim FPGA, RFSoC, TensorRT, ONNX Runtime, TVM, or other deployment results.
+- No latency, throughput, energy, memory-bandwidth, or real storage/compression measurements are reported. Any discussion of reduced bit-width should be presented only as a theoretical motivation, not as an experimentally measured deployment benefit.
+
+### 11.4 Missing visualization limitation
+
+- The result artifact contains `accuracy_drop.png`, `error_metrics.png`, and `layerwise_mse.png`, but no activation histogram figure was found. Therefore, the paper can discuss activation outlier suppression through the clipping mechanism and error metrics, but it should not claim to visually demonstrate activation outliers with a histogram.
+
+Suggested wording for the paper limitation paragraph:
+
+> This study has several limitations. First, the experiments are conducted only on CIFAR-10 with a single ResNet-18-CIFAR model and a single random seed. Therefore, the current results should be interpreted as a controlled course-project case study rather than evidence of broad generalization. Second, the calibration set size is fixed to 1024 samples, and no calibration-size sensitivity analysis is included. Third, the proposed clipping threshold is selected from a small predefined percentile candidate set, so the method is MSE-selected within this candidate set rather than globally optimal. Fourth, the experiments use simulated PTQ / fake quantization without a real INT4 inference kernel or hardware deployment, so latency, throughput, energy, and bandwidth improvements are not measured. Finally, although the available figures report accuracy drop, error metrics, and layer-wise MSE behavior, no activation histogram figure is included. Future work should evaluate more datasets, more architectures, multiple random seeds, different calibration sizes, and real deployment backends.
 
 ## 12. Claims that are allowed
 
