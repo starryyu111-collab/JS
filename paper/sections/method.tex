@@ -7,26 +7,26 @@
 \subsection{Overview}
 \label{subsec:method_overview}
 
-Starting from a trained FP32 model, we apply simulated quantization to weights and activations and evaluate the fake-quantized forward pass. No model weights are updated, no quantization-aware training is performed, and the test set is not used for calibration. The studied method only changes the activation threshold selection rule during calibration.
+Starting from a trained FP32 model, we apply simulated quantization to weights and activations and evaluate the resulting fake-quantized forward pass. No model weights are updated, no quantization-aware training is performed, and the test set is not used for calibration. The proposed setting only changes the activation threshold selection rule during calibration.
 
 \subsection{Simulated Quantization}
 \label{subsec:quantization_setting}
 
-For the INT4 post-ReLU activation experiments, activations are quantized as unsigned 4-bit values with range $[0,15]$. Since the observed activation sites are post-ReLU modules, the clipping interval is $[0, \alpha_l]$ for activation site $l$. Given activation value $a$, the simulated activation quantizer is
+For the INT4 post-ReLU activation experiments, activations are quantized as unsigned 4-bit values in the range $[0,15]$. Because the observed activation sites are post-ReLU modules, the clipping interval for activation site $l$ is $[0, \alpha_l]$. Given an activation value $a$, the simulated activation quantizer is
 \begin{equation}
 \begin{aligned}
 \tilde{a} &= s_l\cdot\operatorname{clip}\left(
 \operatorname{round}\left(\frac{\operatorname{clip}(a,0,\alpha_l)}{s_l}\right),0,15\right), \\
-s_l &= \frac{\alpha_l}{15}.
+ s_l &= \frac{\alpha_l}{15}.
 \end{aligned}
 \label{eq:activation_fake_quant}
 \end{equation}
-The post-ReLU activation zero-point is fixed to zero; equivalently, this is an unsigned affine form specialized to non-negative activations. Weights in convolutional and linear layers are fake-quantized using per-output-channel symmetric quantization; the INT4 weight range is $[-7,7]$, and the INT8 baseline uses the corresponding 8-bit ranges specified in the configuration.
+The post-ReLU activation zero-point is fixed to zero; equivalently, this is an unsigned affine form specialized to non-negative activations. Weights in convolutional and linear layers are fake-quantized using per-output-channel symmetric quantization. The INT4 weight range is $[-7,7]$, and the INT8 baseline uses the corresponding 8-bit ranges specified in the configuration.
 
 \subsection{Activation Calibration Rules}
 \label{subsec:activation_calibration_rules}
 
-For an INT4 post-ReLU activation site $l$, let $\mathcal{A}_l=\{a_{l,1},\ldots,a_{l,N_l}\}$ denote all activation values collected from the calibration set. MinMax calibration uses $\alpha_l^{\mathrm{MM}}=\max_{a\in\mathcal{A}_l}a$, while the fixed percentile baseline uses $\alpha_l^{\mathrm{P99.9}}=\operatorname{Percentile}_{99.9}(\mathcal{A}_l)$. The same 99.9 percentile level is used at all activation sites, although each threshold is computed from that site's calibration activations.
+For an INT4 post-ReLU activation site $l$, let $\mathcal{A}_l=\{a_{l,1},\ldots,a_{l,N_l}\}$ denote all activation values collected from the calibration set. MinMax calibration uses $\alpha_l^{\mathrm{MM}}=\max_{a\in\mathcal{A}_l}a$, while the fixed percentile baseline uses $\alpha_l^{\mathrm{P99.9}}=\operatorname{Percentile}_{99.9}(\mathcal{A}_l)$. The same 99.9 percentile level is used at all activation sites, although each threshold is computed from the calibration activations of the corresponding site.
 
 Layer-wise MSE-Selected Activation Clipping selects a threshold separately for each post-ReLU activation site by searching over a finite percentile set,
 \begin{equation}
@@ -41,4 +41,4 @@ E_l(p) &= \frac{1}{N_l}\sum_{i=1}^{N_l}\left(a_{l,i}-\tilde{a}_{l,i}(p)\right)^2
 \end{aligned}
 \label{eq:selected_percentile}
 \end{equation}
-and the final threshold is $\alpha_l^{\ast}=\alpha_l(p_l^{\ast})$. This is a discrete search over the predefined candidate set, not a continuous global optimization of the clipping threshold. After calibration, the selected activation quantization parameters are attached to the corresponding post-ReLU modules and evaluated in the simulated PTQ pipeline.
+and the final threshold is $\alpha_l^{\ast}=\alpha_l(p_l^{\ast})$. This procedure is a discrete search over the predefined candidate set, not a continuous global optimization of the clipping threshold. After calibration, the selected activation quantization parameters are attached to the corresponding post-ReLU modules and evaluated in the simulated PTQ pipeline.
