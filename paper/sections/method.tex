@@ -66,7 +66,7 @@ Fixed percentile clipping replaces the calibration maximum with a predetermined 
 \alpha_l^{\mathrm{P99.9}} = \operatorname{Percentile}_{99.9}(\mathcal{A}_l).
 \label{eq:p999_alpha}
 \end{equation}
-The same percentile value is used for all activation sites. This baseline is still a calibration-time PTQ method: thresholds are selected from calibration activations only, and the model weights are not trained or fine-tuned after quantization.
+The same percentile level, 99.9, is used at all activation sites, although the resulting threshold value is computed separately from each site's calibration activations. This baseline is still a calibration-time PTQ method: thresholds are selected from calibration activations only, and the model weights are not trained or fine-tuned after quantization.
 
 \subsection{Layer-wise MSE-Selected Activation Clipping}
 \label{subsec:mse_selected_clipping}
