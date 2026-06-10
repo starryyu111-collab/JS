@@ -21,7 +21,7 @@ s_l &= \frac{\alpha_l}{15}.
 \end{aligned}
 \label{eq:activation_fake_quant}
 \end{equation}
-The activation zero-point is fixed to zero. Weights in convolutional and linear layers are fake-quantized using per-channel symmetric quantization; the INT4 weight range is $[-7,7]$, and the INT8 baseline uses the corresponding 8-bit ranges specified in the configuration.
+The post-ReLU activation zero-point is fixed to zero; equivalently, this is an unsigned affine form specialized to non-negative activations. Weights in convolutional and linear layers are fake-quantized using per-output-channel symmetric quantization; the INT4 weight range is $[-7,7]$, and the INT8 baseline uses the corresponding 8-bit ranges specified in the configuration.
 
 \subsection{Activation Calibration Rules}
 \label{subsec:activation_calibration_rules}
