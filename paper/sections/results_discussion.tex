@@ -26,7 +26,7 @@ INT4-MSE-Selected & 4 & 4 & post\_relu & per\_tensor\_per\_relu\_module & 92.860
 \end{tabular}
 \end{table*}
 
-INT8-MinMax remains close to FP32, with 94.1100\% Top-1 accuracy compared with 94.1300\% for FP32. In contrast, INT4-MinMax drops to 88.2000\%, a 5.9300 percentage-point decrease. Both clipping variants alleviate this degradation: INT4-P99.9 reaches 92.9700\%, while INT4-MSE-Selected reaches 92.8600\%. Compared with INT4-MinMax, INT4-MSE-Selected improves Top-1 accuracy by 4.6600 percentage points and reduces the accuracy drop from 5.9300 to 1.2700 percentage points.
+INT8-MinMax remains close to FP32, with 94.1100\% Top-1 accuracy compared with 94.1300\% for FP32. In contrast, INT4-MinMax drops to 88.2000\%, a 5.9300 percentage-point decrease. Both clipping variants alleviate this degradation: INT4-P99.9 reaches 92.9700\%, while INT4-MSE-Selected reaches 92.8600\%. Compared with INT4-MinMax, INT4-MSE-Selected improves Top-1 accuracy and reduces the accuracy drop from 5.9300 to 1.2700 percentage points.
 
 The result should be interpreted conservatively. INT4-MSE-Selected improves over INT4-MinMax and reduces reconstruction error, but it does not exceed the fixed INT4-P99.9 baseline in Top-1 accuracy in this run. Therefore, the experiment supports mitigation of INT4-MinMax degradation, not a claim that the proposed method is uniformly better than fixed percentile clipping.
 
@@ -42,10 +42,10 @@ The result should be interpreted conservatively. INT4-MSE-Selected improves over
 
 Compared with INT4-MinMax, INT4-MSE-Selected reduces activation reconstruction MSE from 0.00273660 to 0.00034846 and logit MSE from 1.84912006 to 0.41728575. It also has slightly lower activation MSE and logit MSE than INT4-P99.9, although this lower reconstruction error does not translate into the highest Top-1 accuracy. This mismatch suggests that calibration reconstruction MSE is useful for analyzing quantization behavior but is not a complete substitute for test-set accuracy.
 
-\subsection{Activation Histogram Discussion}
-\label{subsec:activation_histogram_discussion}
+\subsection{Activation Distribution Interpretation}
+\label{subsec:activation_distribution_interpretation}
 
-An activation histogram helps explain why clipping can help low-bit activation quantization: rare large post-ReLU values can stretch the MinMax range, while high-percentile or MSE-selected clipping trades limited saturation for lower rounding error on common activation values. This work does not report a separate histogram figure, so the discussion is limited to this qualitative interpretation rather than a layer-specific numerical claim.
+Although this work does not report a separate activation histogram figure, the activation distribution perspective helps explain why clipping can help low-bit activation quantization: rare large post-ReLU values can stretch the MinMax range, while high-percentile or MSE-selected clipping trades limited saturation for lower rounding error on common activation values. The discussion is therefore limited to this qualitative interpretation rather than a layer-specific numerical claim.
 
 \subsection{Layer-wise Activation MSE}
 \label{subsec:layerwise_activation_mse}
