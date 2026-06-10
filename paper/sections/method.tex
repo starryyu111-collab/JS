@@ -7,7 +7,7 @@
 \subsection{Overview}
 \label{subsec:method_overview}
 
-The evaluated pipeline starts from a trained FP32 model and applies simulated quantization to weights and activations. We then evaluate the resulting fake-quantized forward pass. No model weights are updated, no quantization-aware training is performed, and the test set is not used for calibration. The evaluated method changes only the activation threshold selection rule during calibration.
+The evaluated pipeline starts from a trained FP32 model and applies simulated quantization to weights and activations. The resulting fake-quantized forward pass is then evaluated without updating model weights. No quantization-aware training is performed, and the test set is not used for calibration. The evaluated method changes only the activation threshold selection rule during calibration.
 
 The main idea is to replace a single MinMax activation range with a layer-wise threshold selected from a small candidate set. This design keeps the calibration procedure simple and reproducible. It also keeps the method conservative: the selected threshold is the best candidate only within the tested percentile set, not a global optimum over all possible clipping thresholds.
 
@@ -68,4 +68,4 @@ and the final threshold is $\alpha_l^{\ast}=\alpha_l(p_l^{\ast})$. This procedur
 \subsection{Interpretation of the Local MSE Criterion}
 \label{subsec:mse_criterion_interpretation}
 
-The activation reconstruction MSE used in Eq.~\eqref{eq:selected_percentile} is a calibration-time local criterion. It measures how closely the fake-quantized activations match the FP32 activations at a specific observed site. This criterion is useful because it directly captures the rounding-versus-clipping trade-off induced by a candidate threshold. However, it does not include downstream nonlinearities, residual interactions, class margins, or final decision boundaries. Therefore, a lower activation reconstruction MSE is not guaranteed to produce a higher test-set accuracy. The Results and Discussion section evaluates this distinction explicitly.
+The activation reconstruction MSE in Eq.~\eqref{eq:selected_percentile} is a calibration-time local criterion. It measures how closely the fake-quantized activations match the FP32 activations at a specific observed site. This criterion directly captures the rounding-versus-clipping trade-off induced by a candidate threshold. However, it does not include downstream nonlinearities, residual interactions, class margins, or final decision boundaries. Therefore, a lower activation reconstruction MSE is not guaranteed to produce higher test-set accuracy. The Results and Discussion section evaluates this distinction explicitly.
