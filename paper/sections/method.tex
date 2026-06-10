@@ -7,7 +7,7 @@
 \subsection{Overview}
 \label{subsec:method_overview}
 
-Starting from a trained FP32 model, we apply simulated quantization to weights and activations and evaluate the fake-quantized forward pass. The model parameters are not updated, no quantization-aware training is performed, and no additional training loss is introduced. The proposed method only changes activation threshold selection during calibration; it does not modify the architecture, retrain the model, or use the test set for calibration.
+Starting from a trained FP32 model, we apply simulated quantization to weights and activations and evaluate the fake-quantized forward pass. The model parameters are not updated, no quantization-aware training is performed, and no additional training loss is introduced. The studied method only changes activation threshold selection during calibration; it does not modify the architecture, retrain the model, or use the test set for calibration.
 
 \subsection{Quantization Setting}
 \label{subsec:quantization_setting}
@@ -64,7 +64,7 @@ The same percentile level is used at all activation sites, although each thresho
 \subsection{Layer-wise MSE-Selected Activation Clipping}
 \label{subsec:mse_selected_clipping}
 
-The proposed method selects a clipping threshold separately for each post-ReLU activation site by minimizing activation reconstruction error over a finite candidate set:
+The studied method selects a clipping threshold separately for each post-ReLU activation site by minimizing activation reconstruction error over a finite candidate set:
 \begin{equation}
 \mathcal{P} = \{99.0, 99.5, 99.9, 99.95, 100.0\}.
 \label{eq:candidate_set}
@@ -89,4 +89,4 @@ p_l^{\ast} = \arg\min_{p \in \mathcal{P}} E_l(p),
 \alpha_l^{\ast} = \alpha_l(p_l^{\ast}).
 \label{eq:selected_alpha}
 \end{equation}
-This selection is layer-wise because $p_l^{\ast}$ and $\alpha_l^{\ast}$ may differ across activation sites. Importantly, the optimization in (\ref{eq:selected_percentile}) is a discrete search over the predefined candidate percentile set $\mathcal{P}$, not a continuous global optimization of the clipping threshold. After calibration, the selected activation quantization parameters are attached to the corresponding post-ReLU modules and evaluated with fake-quantized weights and activations.
+This selection is layer-wise because $p_l^{\ast}$ and $\alpha_l^{\ast}$ may differ across activation sites. Importantly, the optimization in (\ref{eq:selected_percentile}) is a discrete search over the predefined candidate percentile set $\mathcal{P}$, not a continuous global optimization of the clipping threshold. After calibration, the selected activation quantization parameters are attached to the corresponding post-ReLU modules and evaluated in the simulated PTQ pipeline with fake-quantized weights and activations.
