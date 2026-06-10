@@ -1,0 +1,45 @@
+name: Build paper PDF
+
+on:
+  push:
+    paths:
+      - 'paper/**'
+      - 'outputs/figures/**'
+      - 'outputs/tables/**'
+      - '.github/workflows/build-paper.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-paper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile IEEE paper
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: paper
+          root_file: main.tex
+          latexmk_use_lualatex: false
+          latexmk_shell_escape: false
+
+      - name: Verify generated PDF
+        run: |
+          test -f paper/main.pdf
+          pdfinfo paper/main.pdf | grep '^Pages:'
+
+      - name: Commit compiled PDF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paper/main.pdf
+          if git diff --cached --quiet; then
+            echo "No PDF changes to commit."
+          else
+            git commit -m "Build compiled paper PDF"
+            git push
+          fi
