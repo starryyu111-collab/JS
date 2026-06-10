@@ -1,0 +1,8 @@
+2026-06-09 23:27:13 | INFO | Starting INT8-MinMax PTQ | model=resnet18_cifar | seed=42 | device=cuda | smoke=False
+2026-06-09 23:27:13 | INFO | Quant ranges | weight=[-127,127] | activation_dtype=uint8 | activation=[0,255]
+2026-06-09 23:27:15 | INFO | Dataset | calibration_source=CIFAR10 train=True | calibration_size=1024 | test_source=CIFAR10 train=False | test_size=10000 | calibration_index_checksum=827329294
+2026-06-09 23:27:15 | INFO | Loaded checkpoint | path=checkpoints/fp32_best.pt | checkpoint_model_name=resnet18_cifar
+2026-06-09 23:27:16 | INFO | Recomputed FP32 top1_accuracy=94.1300
+2026-06-09 23:27:17 | INFO | Observed activation sites | count=21 | names=conv1, layer1.0.conv1, layer1.0.conv2, layer1.1.conv1, layer1.1.conv2, layer2.0.conv1, layer2.0.conv2, layer2.0.downsample.0, layer2.1.conv1, layer2.1.conv2, layer3.0.conv1, layer3.0.conv2, layer3.0.downsample.0, layer3.1.conv1, layer3.1.conv2, layer4.0.conv1, layer4.0.conv2, layer4.0.downsample.0, layer4.1.conv1, layer4.1.conv2, fc
+2026-06-09 23:27:21 | INFO | INT8 result | fp32_top1=94.1300 | int8_top1=94.1100 | accuracy_drop=0.0200 | activation_mse=0.00005792 | logit_mse=0.00910544
+2026-06-09 23:27:21 | INFO | Wrote result CSV | path=outputs/results/int8_minmax_result.csv

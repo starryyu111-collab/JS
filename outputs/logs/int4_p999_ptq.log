@@ -1,0 +1,8 @@
+2026-06-09 23:27:30 | INFO | Starting INT4-P99.9 PTQ | model=resnet18_cifar | seed=42 | device=cuda | smoke=False
+2026-06-09 23:27:30 | INFO | Quant ranges | weight=[-7,7] | activation_dtype=uint4 | activation=[0,15] | percentile=99.9
+2026-06-09 23:27:31 | INFO | Dataset | calibration_source=CIFAR10 train=True | calibration_size=1024 | test_source=CIFAR10 train=False | test_size=10000 | calibration_index_checksum=827329294
+2026-06-09 23:27:31 | INFO | Loaded checkpoint | path=checkpoints/fp32_best.pt | checkpoint_model_name=resnet18_cifar
+2026-06-09 23:27:33 | INFO | Recomputed FP32 top1_accuracy=94.1300
+2026-06-09 23:27:44 | INFO | Observed post-ReLU activation sites | count=17 | names=relu, layer1.0.relu1, layer1.0.relu2, layer1.1.relu1, layer1.1.relu2, layer2.0.relu1, layer2.0.relu2, layer2.1.relu1, layer2.1.relu2, layer3.0.relu1, layer3.0.relu2, layer3.1.relu1, layer3.1.relu2, layer4.0.relu1, layer4.0.relu2, layer4.1.relu1, layer4.1.relu2
+2026-06-09 23:27:49 | INFO | INT4-P99.9 result | fp32_top1=94.1300 | int4_top1=92.9700 | accuracy_drop=1.1600 | activation_mse=0.00035606 | logit_mse=0.46350010 | alpha_range=[0.33755469, 2.0728846]
+2026-06-09 23:27:49 | INFO | Wrote result CSV | path=outputs/results/int4_p999_result.csv

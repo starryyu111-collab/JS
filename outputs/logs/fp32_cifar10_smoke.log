@@ -1,0 +1,8 @@
+2026-06-09 22:59:15 | INFO | Starting FP32 CIFAR-10 run | model=resnet18_cifar | seed=42 | device=cuda | epochs=1
+2026-06-09 22:59:15 | INFO | Smoke controls | is_smoke=True | max_train_batches=1 | max_val_batches=1 | max_test_batches=1
+2026-06-09 22:59:34 | INFO | Dataset split | train=45000 | val=5000 | test=10000
+2026-06-09 22:59:36 | INFO | epoch=1 | train_loss=2.292797 | train_top1_accuracy=7.8125 | val_loss=2.430511 | val_top1_accuracy=9.3750 | lr=0.10000000
+2026-06-09 22:59:36 | INFO | Saved best checkpoint | epoch=1 | val_top1_accuracy=9.3750 | path=checkpoints/fp32_best_smoke.pt
+2026-06-09 22:59:36 | INFO | Reloaded best checkpoint | epoch=1 | val_top1_accuracy=9.3750
+2026-06-09 22:59:36 | INFO | Final test top1_accuracy=14.0625
+2026-06-09 22:59:36 | INFO | Wrote result CSV | path=outputs/results/fp32_result_smoke.csv
