@@ -26,7 +26,7 @@ INT4-MSE-Selected & 4 & 4 & post\_relu & per\_tensor\_per\_relu\_module & 92.860
 \end{tabular}
 \end{table*}
 
-The INT8-MinMax result is close to the FP32 reference, with a Top-1 accuracy of 94.1100\% compared with 94.1300\% for FP32. This indicates that the simulated PTQ pipeline behaves as expected in the 8-bit setting. In contrast, directly applying INT4-MinMax leads to a larger degradation: the Top-1 accuracy decreases to 88.2000\%, corresponding to a 5.9300 percentage-point drop from FP32.
+The INT8-MinMax result is close to the FP32 reference, with a Top-1 accuracy of 94.1100\% compared with 94.1300\% for FP32. The small accuracy difference between INT8-MinMax and FP32 is consistent with the expected behavior of an 8-bit simulated PTQ sanity-check baseline in this experiment. In contrast, directly applying INT4-MinMax leads to a larger degradation: the Top-1 accuracy decreases to 88.2000\%, corresponding to a 5.9300 percentage-point drop from FP32.
 
 Both activation clipping methods alleviate the accuracy degradation of INT4-MinMax. INT4-P99.9 reaches 92.9700\%, and INT4-MSE-Selected reaches 92.8600\%. Compared with INT4-MinMax, INT4-MSE-Selected improves Top-1 accuracy by 4.6600 percentage points and reduces the accuracy drop from 5.9300 to 1.2700 percentage points. Therefore, within this CIFAR-10 setting, the proposed layer-wise MSE-selected clipping alleviates the degradation caused by the plain INT4-MinMax baseline.
 
