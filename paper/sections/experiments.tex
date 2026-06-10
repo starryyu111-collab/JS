@@ -4,29 +4,19 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Dataset}
-\label{subsec:dataset}
+\subsection{Experimental Setup}
+\label{subsec:experimental_setup}
 
-All experiments are conducted on the CIFAR-10 image classification dataset. The dataset contains ten object categories and is used in the standard supervised classification setting. The training split is used for FP32 model training and for selecting the calibration subset used by post-training quantization. The classification accuracy of all methods is evaluated on the CIFAR-10 test set. The evaluation protocol uses the full test set rather than a smoke-test subset.
+All experiments are conducted on CIFAR-10 using a CIFAR-style ResNet-18 model, denoted as \texttt{resnet18\_cifar}. A trained FP32 checkpoint is used as the starting point for all PTQ experiments, and all quantized variants are produced from this fixed model. Accuracy is evaluated on the full CIFAR-10 test set rather than a smoke-test subset.
 
-For calibration, a subset of 1024 samples is drawn from the CIFAR-10 training set. The calibration subset is used only to collect activation statistics and to determine activation clipping thresholds. It is not used for reporting classification accuracy. This separation ensures that calibration-time threshold selection and test-time evaluation are performed on different data splits.
+For calibration, 1024 samples are drawn from the CIFAR-10 training set with seed 42 and mini-batch size 128. The calibration subset is used only to collect activation statistics and determine clipping thresholds; it is not used for reporting classification accuracy. During calibration, the model is in evaluation mode and no model weights are updated.
 
-\subsection{Model}
-\label{subsec:model}
-
-The evaluated network is a CIFAR-style ResNet-18, denoted as \texttt{resnet18\_cifar}. The model has ten output classes corresponding to the ten CIFAR-10 categories. A trained FP32 checkpoint is used as the starting point for all PTQ experiments. The FP32 training configuration uses stochastic gradient descent with momentum, a batch size of 128, and a multi-step learning-rate schedule. In the quantization experiments, the FP32 checkpoint is loaded first, and the quantized variants are produced from this fixed trained model.
-
-\subsection{Calibration Protocol}
-\label{subsec:calibration_protocol}
-
-The PTQ calibration procedure uses samples from the CIFAR-10 training set. For the quantized methods, the configured calibration size is 1024 images, the calibration seed is fixed to 42, and the calibration mini-batch size is 128. During calibration, the model is set to evaluation mode and forward passes are executed without gradient computation. The calibration process only records statistics required by each quantization method; it does not update the model weights.
-
-For INT4 post-ReLU activation quantization, calibration observes ReLU activation sites and constructs layer-wise activation quantization parameters. The INT4-MinMax baseline records the maximum observed post-ReLU activation value at each activation site. The INT4-P99.9 baseline records a fixed 99.9th percentile threshold at each observed site. The proposed INT4-MSE-Selected method collects post-ReLU activation values and chooses the threshold for each site by searching over the candidate percentile set \(\{99.0, 99.5, 99.9, 99.95, 100.0\}\), minimizing calibration reconstruction MSE within this finite set.
+For INT4 post-ReLU activation quantization, the INT4-MinMax baseline records the maximum observed activation value at each activation site. INT4-P99.9 records a fixed 99.9th percentile threshold at each site. INT4-MSE-Selected searches over \(\{99.0, 99.5, 99.9, 99.95, 100.0\}\) and selects the threshold that minimizes calibration reconstruction MSE within this finite set.
 
 \subsection{Quantization Settings}
 \label{subsec:experiment_quantization_settings}
 
-This work evaluates simulated PTQ. The quantized forward pass is emulated using fake quantization and dequantization in floating-point computation. No quantization-aware training is performed, and no real INT4 hardware kernel or hardware latency measurement is included. The detailed quantization settings are summarized in Table~\ref{tab:quant_settings}.
+This work evaluates simulated PTQ with fake quantization and dequantization in floating-point computation. No real INT4 hardware kernel or latency measurement is included. The detailed quantization settings are summarized in Table~\ref{tab:quant_settings}.
 
 \begin{table}[t]
 \centering
@@ -47,40 +37,4 @@ INT4-MSE-Selected & int4, per-channel symmetric, $[-7,7]$ & uint4, post-ReLU, $[
 }
 \end{table}
 
-For INT4 methods, convolutional and linear weights are quantized using signed symmetric per-channel simulated quantization with integer range \([-7,7]\). Post-ReLU activations are quantized using unsigned simulated quantization with integer range \([0,15]\). For INT8-MinMax, weights use signed int8 per-channel symmetric quantization with range \([-127,127]\), while activations use unsigned uint8 affine quantization with range \([0,255]\).
-
-\subsection{Baselines}
-\label{subsec:baselines}
-
-The experiments compare five methods:
-
-\begin{itemize}
-    \item \textbf{FP32}: the floating-point reference model.
-    \item \textbf{INT8-MinMax}: an 8-bit PTQ baseline used as a sanity check for the quantization pipeline.
-    \item \textbf{INT4-MinMax}: the main low-bit PTQ baseline using MinMax activation calibration.
-    \item \textbf{INT4-P99.9}: a fixed percentile clipping baseline using the 99.9th percentile for activation clipping.
-    \item \textbf{INT4-MSE-Selected}: the proposed method, which selects activation clipping thresholds layer by layer by minimizing calibration reconstruction MSE over a predefined candidate percentile set.
-\end{itemize}
-
-All quantized methods start from the same FP32 checkpoint. The comparison is therefore focused on the effect of quantization bit-width and activation clipping strategy rather than differences in model architecture or training procedure.
-
-\subsection{Evaluation Metrics}
-\label{subsec:evaluation_metrics}
-
-The primary evaluation metric is Top-1 classification accuracy on the CIFAR-10 test set. Accuracy is computed after applying the corresponding FP32 or simulated quantized forward pass. The accuracy drop relative to the FP32 reference is reported as
-\begin{equation}
-\Delta_{\mathrm{acc}} = \mathrm{Acc}_{\mathrm{FP32}} - \mathrm{Acc}_{\mathrm{quant}},
-\label{eq:accuracy_drop_exp}
-\end{equation}
-where \(\mathrm{Acc}_{\mathrm{quant}}\) denotes the Top-1 accuracy of a quantized method.
-
-In addition to accuracy, two error metrics are used to characterize quantization behavior. The activation reconstruction MSE measures the discrepancy between FP32 activations and their fake-quantized/dequantized counterparts. The logit MSE measures the discrepancy between the FP32 model output logits and the corresponding quantized model output logits. These metrics are used to analyze quantization error, while the final classification accuracy is always evaluated on the CIFAR-10 test set.
-
-\subsection{Implementation Details}
-\label{subsec:implementation_details}
-
-The experiments are implemented in PyTorch using a custom simulated PTQ pipeline. The repository stores the experimental configuration in method-specific YAML files rather than a single shared \texttt{configs/cifar10.yaml} file. The relevant configuration files are \texttt{fp32\_cifar10.yaml}, \texttt{int8\_minmax\_cifar10.yaml}, \texttt{int4\_minmax\_cifar10.yaml}, \texttt{int4\_p999\_cifar10.yaml}, and \texttt{int4\_mse\_selected\_cifar10.yaml}. The experiment seed is fixed to 42, deterministic execution is enabled when supported, and the device is selected automatically.
-
-The experiment orchestration script collects per-method outputs and requires full CIFAR-10 test-set evaluation before generating the main result table. In particular, smoke-test outputs are not used as main experimental results. The main numerical result table is stored in \texttt{outputs/tables/main\_results.csv}. Key configuration values, such as calibration size, random seed, batch size, candidate percentiles, and integer quantization ranges, are also summarized in \texttt{outputs/tables/experiment\_config\_summary.csv}; the authoritative source for these configuration values remains the corresponding YAML files under \texttt{configs/}. Figures are generated under \texttt{outputs/figures/} for accuracy drop, error metrics, and layer-wise MSE analysis.
-
-No real hardware latency, throughput, energy, or deployment speedup is reported in this section, because the current implementation is a simulated PTQ evaluation rather than a measured hardware implementation.
+The comparison focuses on quantization bit-width and activation calibration strategy rather than differences in architecture or training procedure. The primary metric is Top-1 accuracy on the CIFAR-10 test set. We also report activation reconstruction MSE and logit MSE to characterize simulated quantization error. The main numerical result table is stored in \texttt{outputs/tables/main\_results.csv}; key configuration values are summarized in \texttt{outputs/tables/experiment\_config\_summary.csv}, with the YAML files under \texttt{configs/} as the authoritative configuration source.
