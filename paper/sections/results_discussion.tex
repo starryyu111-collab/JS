@@ -64,7 +64,7 @@ Several factors can explain this mismatch without requiring additional experimen
 \label{subsec:results_limitations}
 
 \subsubsection{Evaluation scope}
-The evidence in this paper is limited to one dataset, one model, one random seed, and one configuration. No multi-seed study, calibration-size sweep, multi-architecture evaluation, or QAT comparison is reported. Therefore, the results should be viewed as a controlled comparison among the implemented baselines rather than as a comprehensive PTQ benchmark.
+The evidence in this paper is limited to one dataset, one model, one random seed, and one configuration. No multi-seed study, calibration-size sweep, multi-architecture evaluation, or QAT comparison is reported. Because INT8-MinMax and the INT4 variants use different activation sites and granularities, conclusions about the clipping rule are drawn from the INT4 variants rather than from a direct INT8-versus-INT4 ablation. Therefore, the results should be viewed as a controlled comparison among the implemented baselines rather than as a comprehensive PTQ benchmark.
 
 \subsubsection{Simulation limitation}
 The implementation uses fake quantization and dequantization in floating-point computation. No real INT4 inference kernel, hardware latency, throughput, energy measurement, or deployment speedup is reported. The results therefore characterize simulated quantization behavior, not measured hardware behavior.
