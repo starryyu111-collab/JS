@@ -81,7 +81,7 @@ Figure~\ref{fig:layerwise_mse} presents the layer-wise selected activation recon
 \label{fig:layerwise_mse}
 \end{figure}
 
-The threshold table shows that the selected percentile is not identical across layers. Some layers select 99.9, while many others select 99.95. This supports the layer-wise nature of the proposed calibration strategy: different activation sites can prefer different clipping thresholds within the predefined candidate set. The smallest selected layer MSE appears in \texttt{layer3.1.relu1}, while the largest selected layer MSE appears in \texttt{layer1.0.relu2}. These per-layer differences suggest heterogeneous layer-wise quantization behavior under INT4 activation clipping.
+As visualized in Fig.~\ref{fig:layerwise_mse}, the selected percentiles and reconstruction errors vary across observed post-ReLU activation sites. This supports the layer-wise nature of the proposed calibration strategy: different activation sites can prefer different clipping thresholds within the predefined candidate set. These per-layer differences suggest layer-dependent quantization behavior under INT4 activation clipping, within the limits of the implemented candidate search.
 
 The layer-wise result should not be interpreted as a continuous global optimization of the clipping threshold. The search is restricted to the candidate percentile set \(\{99.0,99.5,99.9,99.95,100.0\}\). Therefore, the figure supports the claim that the method performs layer-wise calibration within a predefined search set, but it does not support a claim of globally optimal clipping.
 
