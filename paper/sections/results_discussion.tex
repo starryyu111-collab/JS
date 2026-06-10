@@ -1,5 +1,4 @@
 % Results and Discussion section drafted from committed result artifacts.
-% Source note: requested outputs/tables/*.csv files were not present; the committed result CSVs are under outputs/results/.
 % This file is a section fragment, not a standalone LaTeX document.
 
 \section{Results and Discussion}
@@ -8,7 +7,7 @@
 \subsection{Main Quantization Results}
 \label{subsec:main_quantization_results}
 
-Table~\ref{tab:main_results} summarizes the main results of the FP32 reference and the simulated PTQ methods. The table reports Top-1 accuracy on the CIFAR-10 test set, accuracy drop relative to FP32, activation reconstruction MSE, and logit MSE. The requested path \texttt{outputs/tables/main\_results.csv} was not present in the committed repository; therefore, the values in Table~\ref{tab:main_results} are taken from the committed main result file under \texttt{outputs/results/main\_results.csv}.
+Table~\ref{tab:main_results} summarizes the main results of the FP32 reference and the simulated PTQ methods. The table reports Top-1 accuracy on the CIFAR-10 test set, accuracy drop relative to FP32, activation reconstruction MSE, and logit MSE.
 
 \begin{table*}[t]
 \centering
@@ -36,7 +35,7 @@ However, the result should be interpreted conservatively. INT4-MSE-Selected does
 \subsection{Error Metric Analysis}
 \label{subsec:error_metric_analysis}
 
-Figure~\ref{fig:error_metrics} compares activation reconstruction MSE and logit MSE for the quantized methods. The requested artifact \texttt{outputs/tables/mse\_selected\_thresholds.csv} was not present, but the corresponding committed threshold file was found under \texttt{outputs/results/mse\_selected\_thresholds.csv}. The error metrics in Table~\ref{tab:main_results} show that INT4-MinMax has the largest activation reconstruction error among the listed quantized methods, with an activation MSE of 0.00273660 and a logit MSE of 1.84912006.
+Figure~\ref{fig:error_metrics} compares activation reconstruction MSE and logit MSE for the quantized methods. The error metrics in Table~\ref{tab:main_results} show that INT4-MinMax has the largest activation reconstruction error among the listed quantized methods, with an activation MSE of 0.00273660 and a logit MSE of 1.84912006.
 
 \begin{figure}[t]
 \centering
@@ -61,7 +60,7 @@ Figure~\ref{fig:accuracy_drop} visualizes the Top-1 accuracy and the accuracy dr
 \label{fig:accuracy_drop}
 \end{figure}
 
-The comparison shows that activation clipping is important in the INT4 setting. The MinMax strategy preserves rare large activation values in the calibration set, which can enlarge the quantization scale and reduce the effective resolution for more common activation values. By replacing the MinMax threshold with a percentile-based threshold, INT4-P99.9 and INT4-MSE-Selected reduce the effect of rare large activations. The observed accuracy recovery should therefore be described as mitigation of INT4-MinMax degradation rather than as a general optimality claim.
+The comparison shows that activation clipping is important in the INT4 setting evaluated here. The MinMax strategy preserves rare large activation values in the calibration set, which can enlarge the quantization scale and reduce the effective resolution for more common activation values. By replacing the MinMax threshold with a percentile-based threshold, INT4-P99.9 and INT4-MSE-Selected reduce the effect of rare large activations. The observed accuracy recovery should therefore be described as mitigation of INT4-MinMax degradation rather than as a general optimality claim.
 
 \subsection{Activation Histogram Discussion}
 \label{subsec:activation_histogram_discussion}
@@ -82,13 +81,13 @@ Figure~\ref{fig:layerwise_mse} presents the layer-wise selected activation recon
 \label{fig:layerwise_mse}
 \end{figure}
 
-The threshold table shows that the selected percentile is not identical across layers. Some layers select 99.9, while many others select 99.95. This supports the layer-wise nature of the proposed calibration strategy: different activation sites can prefer different clipping thresholds within the predefined candidate set. The smallest selected layer MSE appears in \texttt{layer3.1.relu1}, while the largest selected layer MSE appears in \texttt{layer1.0.relu2}. These per-layer differences reveal layer sensitivity in the INT4 activation quantization process.
+The threshold table shows that the selected percentile is not identical across layers. Some layers select 99.9, while many others select 99.95. This supports the layer-wise nature of the proposed calibration strategy: different activation sites can prefer different clipping thresholds within the predefined candidate set. The smallest selected layer MSE appears in \texttt{layer3.1.relu1}, while the largest selected layer MSE appears in \texttt{layer1.0.relu2}. These per-layer differences suggest heterogeneous layer-wise quantization behavior under INT4 activation clipping.
 
 The layer-wise result should not be interpreted as a continuous global optimization of the clipping threshold. The search is restricted to the candidate percentile set \(\{99.0,99.5,99.9,99.95,100.0\}\). Therefore, the figure supports the claim that the method performs layer-wise calibration within a predefined search set, but it does not support a claim of globally optimal clipping.
 
 \subsection{Discussion and Limitations}
 \label{subsec:results_limitations}
 
-The results suggest that activation clipping is an effective way to reduce the degradation of simulated INT4 PTQ relative to a plain MinMax baseline. INT4-MSE-Selected improves test accuracy over INT4-MinMax and reduces both activation reconstruction MSE and logit MSE. At the same time, the fixed P99.9 baseline obtains slightly higher Top-1 accuracy than INT4-MSE-Selected in this experiment, so the proposed method should be presented as a conservative calibration-time method that improves error behavior and alleviates INT4-MinMax degradation, not as a universally superior clipping strategy.
+In this controlled CIFAR-10 ResNet-18 setting, activation clipping reduces the degradation of simulated INT4 PTQ relative to a plain MinMax baseline. INT4-MSE-Selected improves test accuracy over INT4-MinMax and reduces both activation reconstruction MSE and logit MSE. At the same time, the fixed P99.9 baseline obtains slightly higher Top-1 accuracy than INT4-MSE-Selected in this experiment, so the proposed method should be presented as a conservative calibration-time method that improves error behavior and alleviates INT4-MinMax degradation, not as a universally superior clipping strategy.
 
-Several limitations remain. The current result is based on one dataset, one model, and the committed experimental configuration. No multi-seed study, calibration-size sweep, multi-architecture evaluation, or QAT comparison is reported here. The implementation is simulated PTQ with fake quantization and dequantization; no real INT4 inference kernel is implemented. Consequently, this paper does not make claims about state-of-the-art performance, real hardware latency, throughput, energy efficiency, or deployment speedup.
+Several limitations remain. The current result is based on one dataset, one model, and the committed experimental configuration. No multi-seed study, calibration-size sweep, multi-architecture evaluation, or QAT comparison is reported here. The implementation is simulated PTQ with fake quantization and dequantization; no real INT4 inference kernel is implemented. Consequently, this paper does not make claims about state-of-the-art performance, real hardware latency, throughput, energy efficiency, or deployment speedup. We also do not compare against stronger reconstruction-based PTQ methods such as AdaRound or BRECQ; therefore, the reported results should be interpreted as a controlled comparison among the implemented baselines rather than a comprehensive benchmark against advanced PTQ methods.
