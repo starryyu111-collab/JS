@@ -7,12 +7,12 @@
 \subsection{Overview}
 \label{subsec:method_overview}
 
-Starting from a trained FP32 model, we apply simulated quantization to weights and activations and evaluate the resulting fake-quantized forward pass. No model weights are updated, no quantization-aware training is performed, and the test set is not used for calibration. The proposed setting only changes the activation threshold selection rule during calibration.
+The evaluated pipeline starts from a trained FP32 model and applies simulated quantization to weights and activations. We then evaluate the resulting fake-quantized forward pass. No model weights are updated, no quantization-aware training is performed, and the test set is not used for calibration. The evaluated method changes only the activation threshold selection rule during calibration.
 
 \subsection{Simulated Quantization}
 \label{subsec:quantization_setting}
 
-For the INT4 post-ReLU activation experiments, activations are quantized as unsigned 4-bit values in the range $[0,15]$. Because the observed activation sites are post-ReLU modules, the clipping interval for activation site $l$ is $[0, \alpha_l]$. Given an activation value $a$, the simulated activation quantizer is
+The INT4 activation experiments quantize post-ReLU activations as unsigned 4-bit values in the range $[0,15]$. Because the observed activation sites are post-ReLU modules, the clipping interval for activation site $l$ is $[0, \alpha_l]$. Given an activation value $a$, the simulated activation quantizer is
 \begin{equation}
 \begin{aligned}
 \tilde{a} &= s_l\cdot\operatorname{clip}\left(
@@ -28,7 +28,7 @@ The post-ReLU activation zero-point is fixed to zero; equivalently, this is an u
 
 For an INT4 post-ReLU activation site $l$, let $\mathcal{A}_l=\{a_{l,1},\ldots,a_{l,N_l}\}$ denote all activation values collected from the calibration set. MinMax calibration uses $\alpha_l^{\mathrm{MM}}=\max_{a\in\mathcal{A}_l}a$, while the fixed percentile baseline uses $\alpha_l^{\mathrm{P99.9}}=\operatorname{Percentile}_{99.9}(\mathcal{A}_l)$. The same 99.9 percentile level is used at all activation sites, although each threshold is computed from the calibration activations of the corresponding site.
 
-Layer-wise MSE-Selected Activation Clipping selects a threshold separately for each post-ReLU activation site by searching over a finite percentile set,
+Layer-wise MSE-Selected Activation Clipping selects a threshold separately for each post-ReLU activation site. The search is performed over the finite percentile set
 \begin{equation}
 \mathcal{P}=\{99.0,99.5,99.9,99.95,100.0\}.
 \label{eq:candidate_set}
