@@ -1,4 +1,4 @@
-% Results and Discussion section drafted from committed result artifacts.
+% Results and Discussion section expanded for the moderate-length revision.
 % This file is a section fragment, not a standalone LaTeX document.
 
 \section{Results and Discussion}
@@ -28,6 +28,8 @@ INT4-MSE-Selected & 4 & 4 & post\_relu & per\_tensor\_per\_relu\_module & 92.860
 
 INT8-MinMax remains close to FP32, whereas INT4-MinMax drops to 88.2000\%, corresponding to a 5.9300 percentage-point decrease. This confirms that the evaluated INT4 MinMax setting is substantially more sensitive than the INT8 reference setting. In this CIFAR-10 ResNet-18 run, both clipping variants reduce the INT4-MinMax degradation: INT4-P99.9 reaches 92.9700\%, and INT4-MSE-Selected reaches 92.8600\%. Therefore, INT4-MSE-Selected improves over INT4-MinMax in this setting. However, it does not exceed the fixed INT4-P99.9 baseline in Top-1 accuracy, so the result does not support a claim that MSE-selected clipping is uniformly better than fixed percentile clipping.
 
+The main result also shows why the fixed percentile baseline is important. If the comparison were only between INT4-MinMax and INT4-MSE-Selected, the improvement could be attributed broadly to using any clipping rule. Including INT4-P99.9 separates the effect of clipping from the effect of selecting a percentile by local MSE. In this run, fixed P99.9 gives the highest Top-1 accuracy, while MSE-Selected gives the lowest activation and logit MSE among the INT4 variants. This makes the result more nuanced than a simple accuracy ranking.
+
 \subsection{Error and Layer-wise Analysis}
 \label{subsec:error_and_layerwise_analysis}
 
@@ -38,7 +40,9 @@ INT8-MinMax remains close to FP32, whereas INT4-MinMax drops to 88.2000\%, corre
 \label{fig:error_metrics}
 \end{figure}
 
-Fig.~\ref{fig:error_metrics} compares the reconstruction and logit errors of the quantized methods. Compared with INT4-MinMax, INT4-MSE-Selected reduces activation reconstruction MSE from 0.00273660 to 0.00034846 and logit MSE from 1.84912006 to 0.41728575. It also achieves slightly lower error metrics than INT4-P99.9. However, this error reduction does not translate into the highest Top-1 accuracy. This mismatch suggests that calibration reconstruction MSE is useful for analyzing simulated quantization behavior, but it is not a complete substitute for test-set accuracy.
+Fig.~\ref{fig:error_metrics} compares the reconstruction and logit errors of the quantized methods. Compared with INT4-MinMax, INT4-MSE-Selected reduces activation reconstruction MSE from 0.00273660 to 0.00034846 and logit MSE from 1.84912006 to 0.41728575. It also achieves slightly lower error metrics than INT4-P99.9. These error reductions indicate that the selected thresholds better preserve the measured calibration-style activation values and the final logits under the implemented fake-quantized forward pass.
+
+However, this error reduction does not translate into the highest Top-1 accuracy. This mismatch suggests that calibration reconstruction MSE is useful for analyzing simulated quantization behavior, but it is not a complete substitute for test-set accuracy. Accuracy depends on whether the class decision changes, not only on the average squared difference between FP32 and quantized intermediate values.
 
 \begin{figure}[t]
 \centering
@@ -49,7 +53,21 @@ Fig.~\ref{fig:error_metrics} compares the reconstruction and logit errors of the
 
 Fig.~\ref{fig:layerwise_mse} shows the layer-wise behavior of INT4-MSE-Selected. The selected percentiles and reconstruction errors vary across observed post-ReLU activation sites, confirming that the implemented calibration rule is applied layer-wise within the predefined candidate set. This behavior should not be interpreted as continuous globally optimal clipping, because the search is restricted to \(\{99.0,99.5,99.9,99.95,100.0\}\). Qualitatively, clipping can reduce INT4-MinMax error because rare large post-ReLU values stretch the MinMax range, while high-percentile or MSE-selected clipping trades limited saturation for lower rounding error on common values.
 
+\subsection{Why Lower Reconstruction MSE Does Not Necessarily Yield Higher Accuracy}
+\label{subsec:mse_accuracy_mismatch}
+
+The difference between INT4-P99.9 and INT4-MSE-Selected illustrates that lower reconstruction error is not always equivalent to higher classification accuracy. Activation MSE averages squared numerical errors over many activation elements. Classification accuracy, in contrast, depends on whether the final predicted class changes. A quantized model can have a slightly larger average reconstruction error while still preserving the correct class decision for more test examples.
+
+Several factors can explain this mismatch without requiring additional experiments. First, MSE weights all activation elements according to squared error, whereas classification depends more strongly on errors that affect the relative ordering of logits. Second, the locally best threshold at one activation site may not be globally best after subsequent convolutions, residual additions, nonlinearities, and the classifier head. Third, clipping can remove rare large activations that contribute little to average MSE but may still be useful for a subset of samples. For these reasons, activation MSE should be treated as a diagnostic calibration metric rather than a direct proxy for final accuracy.
+
 \subsection{Limitations}
 \label{subsec:results_limitations}
 
-The evidence in this paper is limited to one dataset, one model, one random seed, and one configuration. No multi-seed study, calibration-size sweep, multi-architecture evaluation, QAT comparison, real INT4 inference kernel, hardware latency, throughput, energy measurement, or deployment speedup is reported. A specific failure case in this run is that the lower activation reconstruction MSE and logit MSE of INT4-MSE-Selected do not lead to higher Top-1 accuracy than INT4-P99.9. Therefore, the results should be viewed as a controlled comparison among the implemented baselines rather than as a comprehensive PTQ benchmark.
+\subsubsection{Evaluation scope}
+The evidence in this paper is limited to one dataset, one model, one random seed, and one configuration. No multi-seed study, calibration-size sweep, multi-architecture evaluation, or QAT comparison is reported. Therefore, the results should be viewed as a controlled comparison among the implemented baselines rather than as a comprehensive PTQ benchmark.
+
+\subsubsection{Simulation limitation}
+The implementation uses fake quantization and dequantization in floating-point computation. No real INT4 inference kernel, hardware latency, throughput, energy measurement, or deployment speedup is reported. The results therefore characterize simulated quantization behavior, not measured hardware behavior.
+
+\subsubsection{Method limitation}
+Layer-wise MSE-Selected Activation Clipping searches only over the predefined percentile set \(\{99.0,99.5,99.9,99.95,100.0\}\). It is not a continuous global optimization of activation thresholds. A specific failure case in this run is that the lower activation reconstruction MSE and logit MSE of INT4-MSE-Selected do not lead to higher Top-1 accuracy than INT4-P99.9.
