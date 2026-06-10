@@ -4,11 +4,11 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Post-training quantization (PTQ) reduces numerical precision after training, but aggressive INT4 activation quantization is sensitive to calibration choices. Rare large post-ReLU values can dominate MinMax calibration, expand the quantization range, and reduce the effective resolution for common activation values. In the evaluated setting, activation clipping may mitigate this effect by trading limited saturation of large values for lower rounding error on the bulk of the distribution.
+Post-training quantization (PTQ) reduces numerical precision after training, but aggressive INT4 activation quantization is sensitive to calibration choices. Rare large post-ReLU values can dominate MinMax calibration, expand the quantization range, and reduce the effective resolution assigned to common activation values. In the evaluated setting, activation clipping may mitigate this effect by trading limited saturation of large values for reduced rounding error over the main activation distribution.
 
-This paper studies a calibration-time clipping rule for simulated INT4 PTQ, called Layer-wise MSE-Selected Activation Clipping. For each post-ReLU activation site, the method evaluates a predefined set of percentile thresholds and selects the candidate with the lowest activation reconstruction MSE. The search is discrete and limited to this candidate set, not a continuous global optimization of the clipping threshold.
+This paper studies a calibration-time clipping rule for simulated INT4 PTQ, called Layer-wise MSE-Selected Activation Clipping. For each post-ReLU activation site, the method evaluates a predefined set of percentile thresholds and selects the candidate with the lowest activation reconstruction MSE. The search is discrete and restricted to this candidate set; it is not a continuous global optimization of the clipping threshold.
 
-The scope is intentionally controlled: we evaluate simulated PTQ on CIFAR-10 using a CIFAR-style ResNet-18 model and compare FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected. The implementation uses fake quantization and dequantization to study accuracy and reconstruction error, without reporting real hardware latency or deployment speedup. The main contributions are:
+The scope is intentionally controlled. We evaluate simulated PTQ on CIFAR-10 using a CIFAR-style ResNet-18 model and compare FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected. The implementation uses fake quantization and dequantization to study accuracy and reconstruction error, without reporting real hardware latency or deployment speedup. The main contributions are:
 \begin{itemize}
     \item a controlled simulated PTQ pipeline for CIFAR-10 ResNet-18 quantization;
     \item an implemented layer-wise MSE-selected clipping rule for INT4 post-ReLU activation quantization;
