@@ -1,4 +1,4 @@
-% Method section drafted from paper/paper_materials.md and src/quant/clipping_search.py.
+% Method section expanded for the moderate-length revision.
 % This file is a section fragment, not a standalone LaTeX document.
 
 \section{Method}
@@ -8,6 +8,8 @@
 \label{subsec:method_overview}
 
 The evaluated pipeline starts from a trained FP32 model and applies simulated quantization to weights and activations. We then evaluate the resulting fake-quantized forward pass. No model weights are updated, no quantization-aware training is performed, and the test set is not used for calibration. The evaluated method changes only the activation threshold selection rule during calibration.
+
+The main idea is to replace a single MinMax activation range with a layer-wise threshold selected from a small candidate set. This design keeps the calibration procedure simple and reproducible. It also keeps the method conservative: the selected threshold is the best candidate only within the tested percentile set, not a global optimum over all possible clipping thresholds.
 
 \subsection{Simulated Quantization}
 \label{subsec:quantization_setting}
@@ -42,3 +44,28 @@ E_l(p) &= \frac{1}{N_l}\sum_{i=1}^{N_l}\left(a_{l,i}-\tilde{a}_{l,i}(p)\right)^2
 \label{eq:selected_percentile}
 \end{equation}
 and the final threshold is $\alpha_l^{\ast}=\alpha_l(p_l^{\ast})$. This procedure is a discrete search over the predefined candidate set, not a continuous global optimization of the clipping threshold. After calibration, the selected activation quantization parameters are attached to the corresponding post-ReLU modules and evaluated in the simulated PTQ pipeline.
+
+\begin{algorithm}[t]
+\caption{Layer-wise MSE-Selected Activation Clipping}
+\label{alg:mse_selected_clipping}
+\begin{algorithmic}[1]
+\REQUIRE Trained FP32 model, calibration set, post-ReLU activation sites, percentile set $\mathcal{P}$
+\ENSURE Selected thresholds $\{\alpha_l^{\ast}\}$ for all observed activation sites
+\FOR{each post-ReLU activation site $l$}
+    \STATE Collect calibration activations $\mathcal{A}_l$ from the FP32 model
+    \FOR{each percentile $p\in\mathcal{P}$}
+        \STATE Set $\alpha_l(p)=\operatorname{Percentile}_{p}(\mathcal{A}_l)$
+        \STATE Fake-quantize and dequantize $\mathcal{A}_l$ using $\alpha_l(p)$
+        \STATE Compute reconstruction error $E_l(p)$ by Eq.~\eqref{eq:selected_percentile}
+    \ENDFOR
+    \STATE Select $p_l^{\ast}=\arg\min_{p\in\mathcal{P}}E_l(p)$
+    \STATE Set $\alpha_l^{\ast}=\alpha_l(p_l^{\ast})$
+\ENDFOR
+\RETURN $\{\alpha_l^{\ast}\}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Interpretation of the Local MSE Criterion}
+\label{subsec:mse_criterion_interpretation}
+
+The activation reconstruction MSE used in Eq.~\eqref{eq:selected_percentile} is a calibration-time local criterion. It measures how closely the fake-quantized activations match the FP32 activations at a specific observed site. This criterion is useful because it directly captures the rounding-versus-clipping trade-off induced by a candidate threshold. However, it does not include downstream nonlinearities, residual interactions, class margins, or final decision boundaries. Therefore, a lower activation reconstruction MSE is not guaranteed to produce a higher test-set accuracy. The Results and Discussion section evaluates this distinction explicitly.
