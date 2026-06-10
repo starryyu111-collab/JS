@@ -1,0 +1,6 @@
+method,weight_bits,activation_bits,activation_site_type,activation_granularity,top1_accuracy,accuracy_drop,activation_mse,logit_mse
+FP32,32,32,none,none,94.1300,0.0000,0.00000000,0.00000000
+INT8-MinMax,8,8,conv_linear_output,per_tensor,94.1100,0.0200,0.00005792,0.00910544
+INT4-MinMax,4,4,post_relu,per_tensor_per_relu_module,88.2000,5.9300,0.00273660,1.84912006
+INT4-P99.9,4,4,post_relu,per_tensor_per_relu_module,92.9700,1.1600,0.00035606,0.46350010
+INT4-MSE-Selected,4,4,post_relu,per_tensor_per_relu_module,92.8600,1.2700,0.00034846,0.41728575
