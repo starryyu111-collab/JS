@@ -1,0 +1,22 @@
+% Introduction section drafted from paper_materials.md and existing Method/Experiments/Results sections.
+% This file is a section fragment, not a standalone LaTeX document.
+
+\section{Introduction}
+\label{sec:introduction}
+
+Convolutional neural networks (CNNs) are widely used in image classification tasks, but their deployment on edge devices is often constrained by limited memory capacity, computation resources, and energy budget. Model compression is therefore an important step when moving trained CNNs from floating-point training environments to resource-constrained inference scenarios. Among different compression techniques, post-training quantization (PTQ) is attractive because it can reduce numerical precision after training without requiring a full retraining procedure.
+
+INT8 PTQ is commonly used as a practical quantization setting because it often provides a favorable trade-off between model size reduction and accuracy preservation. However, further reducing precision to INT4 is more challenging. With only a small number of quantization levels, the choice of quantization range becomes more sensitive. In particular, activation quantization can suffer from rare but large activation values. If MinMax calibration is used, these outliers can expand the activation range and increase the quantization step size, reducing the effective resolution for the majority of activation values.
+
+Activation clipping provides a simple way to address this issue. Instead of preserving the full observed activation range, clipping sets an upper bound for activation quantization. This introduces a trade-off: a smaller clipping threshold may increase clipping error for large activations, but it can also reduce rounding error for more frequent activation values by using a finer quantization scale. Therefore, the clipping threshold should be chosen carefully, especially in low-bit PTQ.
+
+This paper studies a calibration-time activation clipping method for INT4 PTQ. The proposed method, called Layer-wise MSE-Selected Activation Clipping, selects the activation clipping threshold independently for each post-ReLU activation site. During calibration, the method evaluates a predefined set of candidate percentile thresholds, fake-quantizes and dequantizes the collected activations under each candidate, computes the activation reconstruction mean squared error (MSE), and selects the candidate with the lowest MSE for that layer. The search is discrete and limited to the predefined percentile set; it is not a continuous global optimization of the clipping threshold.
+
+The scope of this work is intentionally controlled. We evaluate simulated PTQ on CIFAR-10 using a CIFAR-style ResNet-18 model. The method is compared with FP32, INT8-MinMax, INT4-MinMax, and INT4-P99.9 baselines. The implementation uses fake quantization and dequantization to study accuracy and reconstruction error, and does not report real hardware latency or deployment speedup.
+
+The main contributions of this paper are summarized as follows:
+\begin{itemize}
+    \item We build a controlled simulated PTQ evaluation pipeline for CIFAR-10 CNN quantization, including FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected configurations.
+    \item We introduce a layer-wise MSE-selected activation clipping strategy for INT4 post-ReLU activation quantization, where each layer selects a clipping threshold from a predefined percentile candidate set according to calibration reconstruction MSE.
+    \item We analyze the resulting accuracy, activation reconstruction error, logit consistency, and layer-wise clipping behavior, showing how activation clipping can alleviate the degradation of plain INT4-MinMax in this controlled setting.
+\end{itemize}
