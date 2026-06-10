@@ -1,0 +1,29 @@
+% Related Work section draft.
+% No refs.bib file was found in the repository at drafting time.
+% TODO citation markers below should be replaced after adding real entries to refs.bib.
+
+\section{Related Work}
+\label{sec:related_work}
+
+\subsection{Post-training Quantization}
+\label{subsec:related_ptq}
+
+Post-training quantization (PTQ) reduces the numerical precision of a trained neural network without updating model parameters through back-propagation. Compared with quantization-aware training, PTQ is easier to apply when training data, training budget, or model retraining time is limited. A typical PTQ pipeline first loads a trained floating-point model, then uses a calibration set to determine quantization parameters such as scales, zero-points, and clipping ranges. The calibrated model is finally evaluated with quantized or fake-quantized weights and activations. In practice, INT8 PTQ is commonly used because it often preserves accuracy while reducing storage and arithmetic precision. However, the performance of PTQ depends strongly on the calibration strategy, especially for activation quantization.
+
+\textbf{TODO: Add refs.bib entries and citations for standard PTQ / affine quantization / calibration methods.}
+
+\subsection{Low-bit Quantization for CNNs}
+\label{subsec:related_low_bit_cnn}
+
+Low-bit quantization further reduces precision below the commonly used 8-bit setting. For CNNs, reducing weight and activation precision can lower memory footprint and simplify inference arithmetic, which is attractive for edge deployment. Nevertheless, INT4 quantization is significantly more sensitive than INT8 quantization because only a small number of representable levels are available. This limited resolution makes the choice of quantization scale and clipping range more important. Weight quantization is often more stable when performed with per-channel symmetric scaling, while activation quantization is more difficult because activation distributions depend on input data and can vary across layers. Therefore, low-bit CNN PTQ typically requires more careful calibration than INT8 PTQ.
+
+\textbf{TODO: Add refs.bib entries and citations for low-bit CNN quantization and INT4/PTQ studies.}
+
+\subsection{Activation Clipping and Outlier Suppression}
+\label{subsec:related_activation_clipping}
+
+Activation outliers are a major source of error in low-bit activation quantization. Under MinMax calibration, rare large activation values can determine the full quantization range. This increases the quantization step size and may reduce the effective resolution for the majority of activation values. Activation clipping addresses this problem by selecting a smaller upper bound for the quantization range. The resulting threshold introduces a trade-off between clipping error on large values and rounding error on common values. Fixed percentile clipping is a simple approach that uses the same percentile rule for all layers. In contrast, layer-wise clipping allows different activation sites to use different thresholds, which can better reflect differences in activation distributions and quantization sensitivity.
+
+The method studied in this paper follows this direction but keeps the design deliberately simple. It selects each post-ReLU activation threshold from a predefined percentile candidate set according to calibration reconstruction MSE. This makes the search layer-wise and data-dependent, while avoiding retraining or continuous threshold optimization.
+
+\textbf{TODO: Add refs.bib entries and citations for activation clipping, outlier suppression, percentile clipping, and MSE-based calibration methods.}
