@@ -26,7 +26,7 @@ For INT4 post-ReLU activation quantization, calibration observes ReLU activation
 \subsection{Quantization Settings}
 \label{subsec:experiment_quantization_settings}
 
-This work evaluates simulated PTQ. The quantized forward pass is emulated using fake quantization and dequantization in floating-point computation. No quantization-aware training is performed, and no real INT4 hardware kernel or hardware latency measurement is included.
+This work evaluates simulated PTQ. The quantized forward pass is emulated using fake quantization and dequantization in floating-point computation. No quantization-aware training is performed, and no real INT4 hardware kernel or hardware latency measurement is included. The detailed quantization settings are summarized in Table~\ref{tab:quant_settings}.
 
 \begin{table}[t]
 \centering
