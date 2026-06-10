@@ -60,7 +60,7 @@ Figure~\ref{fig:accuracy_drop} visualizes the Top-1 accuracy and the accuracy dr
 \label{fig:accuracy_drop}
 \end{figure}
 
-The comparison shows that activation clipping is important in the INT4 setting evaluated here. The MinMax strategy preserves rare large activation values in the calibration set, which can enlarge the quantization scale and reduce the effective resolution for more common activation values. By replacing the MinMax threshold with a percentile-based threshold, INT4-P99.9 and INT4-MSE-Selected reduce the effect of rare large activations. The observed accuracy recovery should therefore be described as mitigation of INT4-MinMax degradation rather than as a general optimality claim.
+In the INT4 setting evaluated here, replacing MinMax activation calibration with percentile-based clipping was beneficial relative to the plain INT4-MinMax baseline. The MinMax strategy preserves rare large activation values in the calibration set, which can enlarge the quantization scale and reduce the effective resolution for more common activation values. By replacing the MinMax threshold with a percentile-based threshold, INT4-P99.9 and INT4-MSE-Selected reduce the effect of rare large activations. The observed accuracy recovery should therefore be described as mitigation of INT4-MinMax degradation rather than as a general optimality claim.
 
 \subsection{Activation Histogram Discussion}
 \label{subsec:activation_histogram_discussion}
