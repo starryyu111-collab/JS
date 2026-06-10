@@ -1,0 +1,4 @@
+figure_label,path,referenced_in
+fig:error_metrics,outputs/figures/error_metrics.png,paper/sections/results_discussion.tex
+fig:accuracy_drop,outputs/figures/accuracy_drop.png,paper/sections/results_discussion.tex
+fig:layerwise_mse,outputs/figures/layerwise_mse.png,paper/sections/results_discussion.tex
