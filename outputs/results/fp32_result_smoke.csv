@@ -1,0 +1,2 @@
+method,model,dataset,seed,epochs,best_epoch,val_top1_accuracy,top1_accuracy,checkpoint_path,result_path,log_path,status,fallback_reason,device,batch_size,optimizer,learning_rate,weight_decay,scheduler,train_size,val_size,test_size,evaluated_test_size,test_num_batches,is_smoke,max_train_batches,max_val_batches,max_test_batches
+FP32,resnet18_cifar,CIFAR-10,42,1,1,9.3750,14.0625,checkpoints/fp32_best_smoke.pt,outputs/results/fp32_result_smoke.csv,outputs/logs/fp32_cifar10_smoke.log,ok,,cuda,64,SGD,0.1,0.0005,MultiStepLR,45000,5000,10000,64,1,true,1,1,1
