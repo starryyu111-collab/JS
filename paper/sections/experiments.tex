@@ -4,37 +4,8 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Experimental Setup}
-\label{subsec:experimental_setup}
+All experiments are conducted on CIFAR-10 using a CIFAR-style ResNet-18 model, denoted as \texttt{resnet18\_cifar}. A trained FP32 checkpoint is used as the starting point, and all quantized variants are produced from this fixed model. Accuracy is evaluated on the full CIFAR-10 test set.
 
-All experiments are conducted on CIFAR-10 using a CIFAR-style ResNet-18 model, denoted as \texttt{resnet18\_cifar}. A trained FP32 checkpoint is used as the starting point for all PTQ experiments, and all quantized variants are produced from this fixed model. Accuracy is evaluated on the full CIFAR-10 test set rather than a smoke-test subset.
+For calibration, 1024 CIFAR-10 training samples are drawn with seed 42 and mini-batch size 128. The calibration subset is used only to collect activation statistics and determine clipping thresholds; it is not used for reporting classification accuracy, and no model weights are updated during calibration.
 
-For calibration, 1024 samples are drawn from the CIFAR-10 training set with seed 42 and mini-batch size 128. The calibration subset is used only to collect activation statistics and determine clipping thresholds; it is not used for reporting classification accuracy. During calibration, the model is in evaluation mode and no model weights are updated.
-
-For INT4 post-ReLU activation quantization, the INT4-MinMax baseline records the maximum observed activation value at each activation site. INT4-P99.9 records a fixed 99.9th percentile threshold at each site. INT4-MSE-Selected searches over \(\{99.0, 99.5, 99.9, 99.95, 100.0\}\) and selects the threshold that minimizes calibration reconstruction MSE within this finite set.
-
-\subsection{Quantization Settings}
-\label{subsec:experiment_quantization_settings}
-
-This work evaluates simulated PTQ with fake quantization and dequantization in floating-point computation. No real INT4 hardware kernel or latency measurement is included. The detailed quantization settings are summarized in Table~\ref{tab:quant_settings}.
-
-\begin{table}[t]
-\centering
-\caption{Quantization settings used in the experiments.}
-\label{tab:quant_settings}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{l l l l}
-\hline
-\textbf{Method} & \textbf{Weights} & \textbf{Activations} & \textbf{Activation calibration} \\
-\hline
-FP32 & FP32 & FP32 & None \\
-INT8-MinMax & int8, per-channel symmetric, $[-127,127]$ & uint8, per-tensor affine, $[0,255]$ & MinMax \\
-INT4-MinMax & int4, per-channel symmetric, $[-7,7]$ & uint4, post-ReLU, $[0,15]$ & MinMax \\
-INT4-P99.9 & int4, per-channel symmetric, $[-7,7]$ & uint4, post-ReLU, $[0,15]$ & Fixed 99.9th percentile \\
-INT4-MSE-Selected & int4, per-channel symmetric, $[-7,7]$ & uint4, post-ReLU, $[0,15]$ & Layer-wise MSE-selected percentile \\
-\hline
-\end{tabular}%
-}
-\end{table}
-
-The comparison focuses on quantization bit-width and activation calibration strategy rather than differences in architecture or training procedure. The primary metric is Top-1 accuracy on the CIFAR-10 test set. We also report activation reconstruction MSE and logit MSE to characterize simulated quantization error. The main numerical result table is stored in \texttt{outputs/tables/main\_results.csv}; key configuration values are summarized in \texttt{outputs/tables/experiment\_config\_summary.csv}, with the YAML files under \texttt{configs/} as the authoritative configuration source.
+This work evaluates simulated PTQ with fake quantization and dequantization in floating-point computation. No real INT4 hardware kernel or latency measurement is included. The compared settings are FP32, INT8-MinMax, INT4-MinMax, INT4-P99.9, and INT4-MSE-Selected. INT4 activations are quantized at post-ReLU sites using per-tensor per-module calibration; INT4 weights use per-channel symmetric simulated quantization. The primary metric is Top-1 accuracy on the CIFAR-10 test set, and activation reconstruction MSE and logit MSE are reported to characterize simulated quantization error.
